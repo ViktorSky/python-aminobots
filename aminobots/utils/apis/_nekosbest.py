@@ -1,0 +1,4 @@
+
+
+class NekosBest(object):
+    pass
