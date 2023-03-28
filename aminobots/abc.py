@@ -170,18 +170,18 @@ class ABCAmino(_ABC, Protocol):
 
 
 class ABCACM(_ABC, Protocol):
-    ...
+    __slots__ = ()
 
 
 class ABCWSClient(_ABC, Protocol):
-    ...
+    __slots__ = ()
 
 
-class ABCRTCClient(Protocol):
-    ...
+class ABCRTCClient(_ABC, Protocol):
+    __slots__ = ()
 
 
-class ABCHTTPClient(Protocol):
+class ABCHTTPClient(_ABC, Protocol):
     __slots__ = ()
 
     BASE: ClassVar[URL] = URL('https://service.narvii.com/api/v1/')
@@ -299,7 +299,7 @@ class ABCHTTPClient(Protocol):
 
     async def post(
         self,
-        url: dict,
+        url: str,
         *,
         json: dict,
         **kwargs: ...
@@ -327,7 +327,12 @@ class ABCHTTPClient(Protocol):
         """
         raise NotImplementedError
 
-    async def put(self, url: str, *, params: Optional[dict] = ...) -> dict:
+    async def put(
+        self,
+        url: str,
+        *,
+        params: dict = ...
+    ) -> dict:
         """Make a PUT request to the amino api.
 
         Parameters
@@ -352,7 +357,12 @@ class ABCHTTPClient(Protocol):
         """
         raise NotImplementedError
 
-    async def delete(self, url: str, params: dict, **kwargs: Any) -> dict:
+    async def delete(
+        self,
+        url: str,
+        params: dict,
+        **kwargs: Any
+    ) -> dict:
         """Make a DELETE request to the amino api.
 
         Parameters
