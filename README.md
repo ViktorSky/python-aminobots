@@ -9,4 +9,4 @@ For more information join the discord server: https://discord.gg/mWJfZ2eTFc
 # Documentation
 
 # Installing (coming soon)
-`pip install aminobots`
+`pip install python-aminobots`
