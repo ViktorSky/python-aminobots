@@ -1,16 +1,57 @@
-'''Async API Wrapper for Amino'''
+"""
+Amino API Wrapper
+-----------------
+
+A basic async wrapper for the Amino API.
+
+:copyright: (c) 2023-present ViktorSky
+:license: MIT, see LICENSE for more details.
+
+"""
 
 __title__ = 'python-aminobots'
-__description__ = 'Async API Wrapper for Amino'
+__description__ = 'A basic async wrapper for the Amino API.'
 __url__ = 'https://github.com/ViktorSky/python-aminobots'
 __version__ = '0.0.1'
 __author__ = 'ViktorSky'
 __author_email__ = 'viktorbotsprojects@gmail.com'
-__licence__ = 'MIT LICENCE'
+__license__ = 'MIT LICENSE'
 __copyright__ = 'Copyright (c) 2023 ViktorSky'
 
-from .models import *
+
+import pkgutil
+import logging
+from typing import NamedTuple, Literal
+
 from .acm import *
 from .amino import *
-from .enums import *
-from .errors import *
+from .bot import *
+from .http import *
+from .rtc import *
+from .ws import *
+from . import (
+    abc as abc,
+    enums as enums,
+    errors as errors,
+    models as models,
+    objects as objects,
+    utils as utils
+)
+
+__path__ = pkgutil.extend_path(__path__, __name__)
+
+class VersionInfo(NamedTuple):
+    major: int
+    minor: int
+    micro: int
+    releaselevel: Literal["alpha", "beta", "candidate", "final"]
+    serial: int
+
+
+version_info: VersionInfo = VersionInfo(major=0, minor=0, micro=1, releaselevel='alpha', serial=0)
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+
+del logging, NamedTuple, Literal, VersionInfo, pkgutil
+
+
