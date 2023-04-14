@@ -21,7 +21,7 @@ __copyright__ = 'Copyright (c) 2023 ViktorSky'
 
 import pkgutil
 import logging
-from typing import NamedTuple, Literal
+from typing import Any, NamedTuple, Literal, Coroutine
 
 from .acm import *
 from .amino import *
@@ -52,6 +52,12 @@ version_info: VersionInfo = VersionInfo(major=0, minor=0, micro=1, releaselevel=
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
-del logging, NamedTuple, Literal, VersionInfo, pkgutil
 
+def run(main: Coroutine[Any, Any, Any], *, debug=False) -> None:
+    import asyncio
+    try:
+        asyncio.run(main, debug=debug)
+    except KeyboardInterrupt:
+        pass
 
+del logging, Any, NamedTuple, Literal, Coroutine, VersionInfo, pkgutil

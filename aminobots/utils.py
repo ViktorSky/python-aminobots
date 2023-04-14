@@ -1,34 +1,62 @@
+"""MIT License
+
+Copyright (c) 2022 ViktorSky
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 from typing import (
     Any,
     Callable,
-    Iterable,
+    Dict,
     List,
     Optional,
-    Union
+    Final,
+    Union,
 )
 from collections.abc import Sequence
 from hashlib import sha1
 from base64 import b64encode, urlsafe_b64decode
-from datetime import datetime
+from functools import cached_property
+import datetime
 import ujson
 import hmac
+import time
 import re
 import os
 
 __all__ = (
+    'active_time',
     'copy_doc',
+    'copy_all_docs',
     'Date',
     'Device',
     'MISSING',
     'SID',
     'signature',
     'suppress',
-    'find_url',
+    'find_urls',
 )
 
-PREFIX: str = '19'
-DEV_KEY = 'E7309ECC0953C6FA60005B2765F99DBBC965C8E9'
-SIG_KEY = 'DFA5ED192DDA6E88A12FE12130DC6206B1251E44'
+PREFIX: Final[str] = '19'
+DEVKEY: Final[str] = 'E7309ECC0953C6FA60005B2765F99DBBC965C8E9'
+SIGKEY: Final[str] = 'DFA5ED192DDA6E88A12FE12130DC6206B1251E44'
 
 
 class _Missing:
@@ -49,7 +77,6 @@ class _Missing:
 
 MISSING: Any = _Missing()
 
-
 def itersplit(array: Sequence[Any], count: int) -> List[Sequence[Any]]:
     """Split iterables
 
@@ -64,45 +91,69 @@ def itersplit(array: Sequence[Any], count: int) -> List[Sequence[Any]]:
     return [array[i::count] for i in range(count)]
 
 
-class Date:
+class Date(str):
+    """Represent a Amino API date format.
+
+    Parameters
+    ----------
+    timestamp : Optional[:class:`str`]
+        The timestamp format string.
+
+    Attributes
+    ----------
+    year : int
+    month : int
+    day : int
+    hour : int
+    minute : int
+    second : int
+    time
+    date
+
+    """
     fmt = '%Y-%m-%dT%H:%M:%SZ'
 
     def __init__(self, timestamp: Optional[str] = None) -> None:
         if timestamp:
-            self.dt = datetime.strptime(timestamp, self.fmt)
+            self.dt = datetime.datetime.strptime(timestamp, self.fmt)
         else:
-            self.dt = datetime.now()
+            self.dt = datetime.datetime.now()
 
-    @property
+    def __new__(cls, timestamp: Optional[str] = None):
+        return str.__new__(cls, timestamp)
+
+    @cached_property
     def year(self) -> int:
         return self.dt.year
 
-    @property
+    @cached_property
     def month(self) -> int:
         return self.dt.month
 
-    @property
+    @cached_property
     def day(self) -> int:
         return self.dt.day
 
-    @property
+    @cached_property
     def hour(self) -> int:
         return self.dt.hour
 
-    @property
+    @cached_property
     def minute(self) -> int:
         return self.dt.minute
 
-    @property
+    @cached_property
     def second(self) -> int:
         return self.dt.second
 
-    @property
-    def time(self):
+    @cached_property
+    def time(self) -> datetime.time:
+        """To datetime.time"""
         return self.dt.time()
 
-    @property
-    def date(self):
+    @cached_property
+    def date(self) -> datetime.date:
+        """To datetime.date"""
         return self.dt.date()
 
     def __str__(self) -> str:
@@ -132,32 +183,34 @@ class Device(str):
     def from_id(cls, id: bytes) -> str:
         info: bytes = bytes.fromhex(PREFIX) + id
         device: bytes = info + hmac.new(
-            bytes.fromhex(DEV_KEY),
+            bytes.fromhex(DEVKEY),
             info, sha1
         ).digest()
         return device.hex()
 
-    @property
+    @cached_property
     def id(self) -> bytes:
         """device identifier"""
         return bytes.fromhex(self)[1:21]
 
 
 class SID(str):
-    __slots__ = (
-        'clientType',
-        'ip_address',
-        'key',
-        'null',
-        'objectId',
-        'objectType',
-        'prefix',
-        'timestamp',
-        'userId',
-        'version'
-    )
-    
-    def __new__(cls, sid: str):
+    """Represent the user sid.
+
+    Attributes
+    ----------
+    version : int
+    key : str
+    ip_address
+    objectId
+    objectType
+    prefix: str
+    timestamp
+    clientType
+
+    """
+
+    def __init__(self, sid: str) -> None:
         try:
             decoded: bytes = urlsafe_b64decode(
                 sid + "=" * (4 - len(sid) % 4)
@@ -165,66 +218,41 @@ class SID(str):
             data: dict = ujson.loads(decoded[1:-20].decode("utf-8"))
         except (TypeError, UnicodeDecodeError, ujson.JSONDecodeError) as exc:
             raise ValueError('invalid sid.') from exc
-        cls.version = data['0']
-        cls.null = data['1'] # ? ndcId
-        cls.objectId = data['2']
-        cls.objectType = data['3']
-        cls.ip_address = data['4']
-        cls.timestamp = data['5']
-        cls.clientType = data['6']
-        cls.key = decoded[-20:].hex()
-        cls.prefix = decoded[:2].hex()
+        else:
+            self.json: dict = data
+            self.key = decoded[-20:].hex()
+            self.prefix = decoded[:2].hex()
 
-        """cls.json = dict(
-            version=data["0"],
-            null=data["1"],  # ?
-            userId=data["2"],
-            objectType=data["3"],
-            ip_address=data["4"],
-            timestamp=data["5"],
-            clientType=data["6"],
-            sidKey=decoded[-20:].hex(),
-            sidType=decoded[:2].hex(),
-        )"""
+    def __new__(cls, sid: str):
         return str.__new__(cls, sid)
 
-    """
-    @classmethod
-    def new(cls):
-        ...
-
-    @property
+    @cached_property
     def version(self) -> int:
-        ...
+        return self.json['0']
 
-    @property
+    @cached_property
+    def null(self):
+        return self.json['1']
+
+    @cached_property
     def objectId(self) -> str:
-        ...
+        return self.json['2']
 
-    @property
+    @cached_property
     def objectType(self) -> int:
-        ...
+        return self.json['3']
 
-    @property
+    @cached_property
     def ip_address(self) -> str:
-        ...
+        return self.json['4']
 
-    @property
-    def timestamp(self):
-        ...
+    @cached_property
+    def timestamp(self) -> int:
+        return self.json['5']
 
-    @property
+    @cached_property
     def clientType(self) -> int:
-        ...
-
-    @property
-    def key(self) -> bytes:
-        ...
-
-    @property
-    def prefix(self) -> bytes:
-        ...
-    """
+        return self.json['6']
 
 
 class suppress:
@@ -261,7 +289,7 @@ def signature(data: str) -> str:
     """
     return b64encode(
         bytes.fromhex(PREFIX) + hmac.new(
-            bytes.fromhex(SIG_KEY),
+            bytes.fromhex(SIGKEY),
             data.encode("utf-8"),
             sha1
         ).digest()
@@ -290,8 +318,48 @@ def copy_doc(doc: Union[Callable, str]) -> Callable:
         return obj
     return decorator
 
+def copy_all_docs(cls: type) -> type:
+    """Decorator that copies docstrings from an abstract base class to a concrete class.
 
-def find_url(text: str) -> set:
-    patern = r"((https?|ndc):((//)|(\\\\))+[\w\d:#@%/;$()~_?\+-=\\\.&]*)"
-    urls = re.compile(patern, re.MULTILINE|re.UNICODE).findall(text)
-    return set(url[0] for url in urls)
+    This decorator copies the docstrings of all methods and properties from the
+    abstract base class to the corresponding methods and properties in the concrete
+    class. If a method or cached_property in the concrete class already has a docstring,
+    it is not overwritten.
+
+    Parameters
+    ----------
+    cls : type
+        The concrete class to be decorated.
+
+    Returns
+    -------
+    type
+        The decorated concrete class with copied docstrings.
+    """
+    for name, member in cls.__dict__.items():
+        if not member.__doc__:
+            for base in cls.__bases__:
+                base_member = getattr(base, name, None)
+                if base_member and base_member.__doc__:
+                    member.__doc__ = base_member.__doc__
+                    break
+    return cls
+
+def find_urls(text: str) -> List[str]:
+    url_pattern = re.compile(r'((http[s]?|ndc):\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+#]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)')
+    return [url[0] for url in re.findall(url_pattern, text)]
+
+
+def active_time(seconds=0, minutes=0, hours=0) -> List[Dict[str, int]]:
+    total = seconds + minutes*60 + hours*60*60
+    return [
+        {
+            'start': int(time.time()),
+            'end': int(time.time() + 300)
+        } for _ in range(total // 300)
+    ] + [
+        {
+            'start': int(time.time()),
+            'end': int(time.time() + total % 300)
+        }
+    ]

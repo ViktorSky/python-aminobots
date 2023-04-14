@@ -1,3 +1,26 @@
+"""MIT License
+
+Copyright (c) 2022 ViktorSky
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 from typing import (
     Any,
     Callable,
@@ -9,26 +32,16 @@ from typing import (
     TYPE_CHECKING
 )
 
+import logging
+import aiohttp
+
 from .abc import ABCAmino
 from .enums import Language
 from .ws import WSClient
 from .rtc import RTCClient
 from .http import HTTPClient
-from .utils import copy_doc, Device, suppress
-from .models import (
-    AccountInfo,
-    CommunityInfo,
-    CommunityInfluencers,
-    LinkIdentify,
-    LinkResolution,
-    Login,
-    UserInfo
-)
-from .objects import (
-    Account,
-    UserProfile,
-    Object
-)
+from .utils import copy_all_docs, Device, suppress, MISSING
+from . import enums, models, objects
 from inspect import iscoroutinefunction
 from functools import wraps
 
@@ -36,18 +49,82 @@ from functools import wraps
 __all__ = ('Amino',)
 
 
-class Amino(ABCAmino):
+DEFAULT_LOGGER = logging.getLogger('Amino')
+DEFAULT_LOGGER.setLevel(logging.WARNING)
+DEFAULT_HANDLER = logging.StreamHandler()
+DEFAULT_HANDLER.setLevel(logging.WARNING)
+DEFAULT_HANDLER.setFormatter(logging.Formatter(
+    '%(asctime)s |:| %(levelname)s |:| %(name)s |:| %(message)s',
+    '%Y-%m-%d %H:%M:%S'))
+DEFAULT_LOGGER.addHandler(DEFAULT_HANDLER)
 
-    account: Account
+
+@copy_all_docs
+class Amino(ABCAmino):
+    """Represent the Amino client.
+
+    Examples
+    --------
+    ```
+    >>> amino = Amino()
+    >>> response = amino.login(input('email:'), input('password:'))
+    >>> if response.api.ok():
+    ...     print(amino.user.nickname)
+    ... else:
+    ...     print(response.api.message)
+    ```
+
+    Parameters
+    ----------
+    device: Union[:class:`str`, :class:`Device`]
+        NDC device. (default is `None`)
+    proxy: :class:`str`
+        Http or Https proxy. (default is `None`)
+    language: :class:`Language`
+        Content language for amino. (default is :attr:`Language.ENGLISH`)
+    utc: `int`
+        UTC timezone. (default is `0`)
+    raiseExceptions: :class:`bool`
+        Raise amino exceptions. (defualt is `True`)
+
+    Attributes
+    ----------
+    account: :class:`Account`
+        User account.
+    auid: :class:`str`
+        User auth id.
+    device: :class:`Device`
+        User device.
+    http: :class:`HTTPClient`
+        HTTP client for amino api.
+    raiseExceptions: :class:`bool`
+        Raise amino exceptions.
+    rtc: :class:`RTCClient`
+        RTC client for agora service.
+    sid: Optional[:class:`str`]
+        Amino session id. (token)
+    secret: Optional[:class:`str`]
+        Secret password encoded.
+    user: :class:`UserProfile`
+        User profile.
+    utc: :class:`int`
+        Timezone (UTC).
+    ws: :class:`WSClient`
+        Websocket client for amino.
+
+    """
+    account: objects.Account
     auid: Optional[str]
     device: Device
     http: HTTPClient
+    language: Language
+    logger: logging.Logger
     raiseExceptions: bool
     rtc: RTCClient
     sid: Optional[str]
     secret: Optional[str]
-    socketEnabled: bool
-    user: UserProfile
+    timeout: Optional[int]
+    user: objects.UserProfile
     utc: int
     ws: WSClient
 
@@ -55,31 +132,43 @@ class Amino(ABCAmino):
         self,
         device: Optional[Union[str, Device]] = None,
         proxy: Optional[str] = None,
+        proxy_auth: aiohttp.BasicAuth = None,
         *,
-        language: Union[Language, str] = Language.ENGLISH,
+        logger: logging.Logger = DEFAULT_LOGGER,
+        language: Language = Language.ENGLISH,
         utc: int = 0,
+        timeout: Optional[int] = None,
         raiseExceptions: bool = True,
-        socketEnabled: bool = True
     ) -> None:
+        if not isinstance(device, Optional[Union[str, Device]]):
+            raise TypeError('expected str, Device or None, not %r.' % type(device).__name__)
+        if not isinstance(logger, logging.Logger):
+            raise TypeError('expected Logger not %r.' % type(logger).__name__)
+        if not isinstance(proxy, Optional[str]):
+            raise TypeError('expected str not %r.' % type(proxy).__name__)
+        if not isinstance(proxy_auth, Optional[aiohttp.BasicAuth]):
+            raise TypeError('expected BasicAuth not %r.' % type(proxy_auth).__name__)
+        if not isinstance(utc, int):
+            raise TypeError('expected int not %r.' % type(utc).__name__)
+        if utc not in range(-12, 15):
+            raise ValueError('the utc must be between -12 and 14.')
+        if not isinstance(language, Language):
+            raise TypeError('expected str or Language not %r.' % type(language).__name__)
+        if not isinstance(timeout, Optional[int]):
+            raise TypeError('expected int not %r.' % type(timeout).__name__)
         self.ws = WSClient(self)
         self.http = HTTPClient(self)
         self.rtc = RTCClient(self)
-        self.account = Account(dict())
-        self.user = UserProfile(dict())
-        # proxy = options.get('proxy')
-        # proxy_auth = options.get('proxy_auth')
-        if not isinstance(device, Optional[Union[str, Device]]):
-            raise TypeError('expected str, Device or None, not %r.' % type(device).__name__)
+        self.account = objects.Account(dict())
+        self.user = objects.UserProfile(dict())
         self.device = Device(device) if device else Device()
-        self.raiseExceptions = bool(raiseExceptions)
-        self.socketEnabled = bool(socketEnabled)
-        if not isinstance(utc, int):
-            raise TypeError('expected int not %r.' % type(utc).__name__)
-        elif utc not in range(-12, 15):
-            raise ValueError('the utc must be between -12 and 14.')
-        if not isinstance(language, (Language, str)):
-            raise TypeError('expected str or Language not %r.' % type(language).__name__)
-        self.utc = utc or 0
+        self.logger = logger
+        self.proxy = proxy
+        self.proxy_auth = proxy_auth
+        self.utc = utc
+        self.language = language
+        self.timeout = timeout
+        self.raiseExceptions = raiseExceptions
         self.auid = None
         self.secret = None
         self.sid = None
@@ -89,43 +178,92 @@ class Amino(ABCAmino):
         """Timezone for amino http parameters."""
         return self.utc * 60
 
-    @copy_doc(ABCAmino.get_from_link)
-    async def get_from_link(self, link: str) -> LinkResolution:
-        return LinkResolution(await self.http.get('link-resolution', dict(q=link)))
+    async def get_from_link(self, link: str) -> models.LinkResolution:
+        return models.LinkResolution(await self.http.get('link-resolution', dict(q=link)))
 
-    @copy_doc(ABCAmino.get_link_info)
-    async def get_link_info(self, link: str) -> LinkIdentify:
-        return LinkResolution(await self.http.get('community/link-identify', dict(q=link)))
+    async def get_link_info(self, link: str) -> models.LinkIdentify:
+        return models.LinkIdentify(await self.http.get('community/link-identify', dict(q=link)))
 
-    @copy_doc(ABCAmino.get_user_info)
-    async def get_user_info(self, id: str, cid: Optional[int] = None) -> UserInfo:
-        params = dict(withInfluencerInfo=1, withInfluencerList=1, influencerInfo='true')
-        return UserInfo(await self.http.get(f'user-profile/{id}', params, cid=cid))
+    async def get_user_info(self, id: str, cid: Optional[int] = None) -> models.UserInfo:
+        return models.UserInfo(await self.http.get(f'user-profile/{id}', cid=cid))
 
-    @copy_doc(ABCAmino.get_account_info)
-    async def get_account_info(self) -> AccountInfo:
-        return AccountInfo(await self.http.get('account'))
+    async def get_account_info(self) -> models.AccountInfo:
+        return models.AccountInfo(await self.http.get('account'))
 
-    @copy_doc(ABCAmino.get_community_info)
-    async def get_community_info(self, id: int, /) -> CommunityInfo:
+    async def get_community_info(self, id: int, /) -> models.CommunityInfo:
         params = dict(withInfluencerList=1, withTopicList='true', influencerListOrderStrategy='fansCount')
-        return CommunityInfo(await self.http.get('/community/info', params=params, scopeCid=id))
+        return models.CommunityInfo(await self.http.get('community/info', params=params, scopeCid=id))
 
-    @copy_doc(ABCAmino.joined_communities)
-    async def joined_communities(self, start: int = 0, size: int = 25) -> dict:
-        params = dict(v=1, start=start, size=size)
-        return await self.http.get('/community/joined', params=params)
+    async def joined_communities(self, start: int = 0, size: int = 25) -> models.JoinedCommunities:
+        return models.JoinedCommunities(await self.http.get('community/joined', dict(v=1, start=start, size=size)))
 
-    @copy_doc(ABCAmino.get_vip_users)
-    async def get_vip_users(self, cid: int) -> CommunityInfluencers:
-        return CommunityInfluencers(await self.http.get('influencer', cid=cid))
+    async def get_vip_users(self, cid: int) -> models.CommunityInfluencers:
+        return models.CommunityInfluencers(await self.http.get('influencer', cid=cid))
+
+    async def search_user(self, q: str, cid: Optional[int] = None) -> dict:
+        """Deprecated api service."""
+        params: dict = dict(q=q, timezone=self.timezone)
+        return await self.http.get('user-profile/search', params=params, cid=cid)
+
+    async def search_community(self, q: str, language: str = 'en') -> models.SearchCommunity:
+        return models.SearchCommunity(await self.http.get('community/search', dict(q=q, timezone=self.timezone, language=language)))
+
+    async def login(
+        self,
+        email: str,
+        password: str = MISSING,
+        secret: str = MISSING
+    ) -> models.Login:
+        if not password and not secret:
+            raise ValueError('Password or secret can\'t be empty.')
+        response = models.Login(await self.http.post('/auth/login', dict(
+            action="normal",
+            clientType=enums.ClientType.MASTER.value,
+            deviceID=self.device,
+            email=email,
+            secret=f"0 {password}" if password else secret,
+            v=2
+        )))
+        if response.ok():
+            self.auid = response.auid
+            self.secret = response.secret
+            self.sid = response.sid
+            self.account.json.update(response.account.json)
+            self.user.json.update(response.user.json)
+        return response
+
+    async def logout(self):
+        self.auid = None
+        self.secret = None
+        self.sid = None
+        self.account.json.clear()
+        self.user.json.clear()
+
+
+class Amino1:
+    async def get_community(self, id: int):
+        class CommunityService:
+            ...
+        return CommunityService()
+
+    async def get_user(self, id: str):
+        class UserService:
+            ...
+        return UserService()
+
+    async def get_chat(self, id: str):
+        class ChatService:
+            ...
+        return ChatService()
+
+    async def get_blog(self, id: str):
+        ...
+
+
+class Amino2:
 
     async def get_trending_community(self, cid: int = None):
         return await self.http.get('/community/trending', cid=cid)
-
-    async def search_community(self, q: str):
-        params: dict = dict(q=q, timezone=self.timezone)
-        return await self.http.get('/community/search', params=params)
 
     async def search_post(self, q: str, cid: int):
         params: dict = dict(q=q, timezone=self.timezone)
@@ -134,10 +272,6 @@ class Amino(ABCAmino):
     async def search_chat(self, q: str, cid: Optional[int] = None):
         params: dict = dict(q=q, timezone=self.timezone)
         return await self.http.get('/chat/thread/explore/search', cid=cid)
-
-    async def search_user(self, q: str, cid: Optional[int] = None):
-        params: dict = dict(q=q, timezone=self.timezone)
-        return await self.http.get('/user-profile/search', params=params, cid=cid)
 
     async def recommend_community(self):
         params: dict = dict(timezone=self.timezone)
@@ -395,60 +529,6 @@ class Amino(ABCAmino):
         ...
 
     # others
-    async def login(
-        self,
-        email: str = None,
-        password: str = None,
-        phone: str = None,
-        secret: str = None,
-        clientType: int = 100
-    ):
-        """Login in one account.
-
-        Parameters
-        ----------
-        email : str, optional
-            email of the amino account. (default is None)
-        password : str, optional
-            password of the amino account. (default is None)
-        phone : str, optional
-            phone number of the amino account. (default is None)
-        secret : str, optinal
-            secret password encripted of the amino account. (default is None)
-        clientType : int, optional
-            client type of the user. (default is 100)
-
-        Returns
-        -------
-        dict
-            native api response
-        aminobots.objects.Login
-            an object organize api response
-
-        Examples
-        --------
-        >>> amino.login(email='example@example.com', password='password123')
-        <Login object at 0x000001BB8BAE9640>
-
-        """
-        data = dict(action="normal", clientType=clientType, deviceID=self.device,
-                    email=email, secret=f"0 {password}" if password else secret, v=2)
-        if phone is not None:
-            data.update(phoneNumber=phone)
-            data.pop("email")
-        response = await self.http.post('/auth/login', json=data)
-        if isinstance(response.get('api:statuscode'), int) and not response['api:statuscode']:
-            self.auid = response.get('auid')
-            self.secret = response.get('secret')
-            self.sid = response.get('sid')
-            self.account.json.update(response.get('account'))
-            self.user.json.update(response.get('userProfile'))
-            if self.socketEnabled:
-                await self.ws.connect(daemon=True)
-        return response
-
-    async def logout(self):
-        ...
 
     async def purchase(self):
         ...
