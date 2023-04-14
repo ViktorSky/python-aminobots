@@ -22,6 +22,8 @@ SOFTWARE.
 """
 from dataclasses import dataclass
 from typing import List, Literal, Optional, Tuple
+from functools import cached_property
+from .userprofilelist import UserProfileList
 
 __all__ = ('Community',)
 
@@ -53,7 +55,7 @@ class Style:
     """
     json: List[dict]
 
-    @property
+    @cached_property
     def backgroundColor(self) -> List[str]:
         """Topic background color."""
         return [s.get("backgroundColor") for s in self.json]
@@ -79,22 +81,22 @@ class AddedTopic:
     """
     json: List[dict]
 
-    @property
+    @cached_property
     def backgroundColor(self) -> List[str]:
         """Hex color code."""
         return self.style.backgroundColor
 
-    @property
+    @cached_property
     def name(self) -> List[str]:
         """Topic name."""
         return [at.get("name") for at in self.json]
 
-    @property
+    @cached_property
     def style(self) -> Style:
         """Style object."""
         return Style([at.get("style") or {} for at in self.json])
 
-    @property
+    @cached_property
     def topicId(self) -> List[int]:
         """Topic id."""
         return [at.get("topicId") for at in self.json]
@@ -115,11 +117,11 @@ class FeedPageList:
     """
     json: List[dict]
 
-    @property
+    @cached_property
     def status(self) -> List[int]:
         return [fp.get("status") for fp in self.json]
 
-    @property
+    @cached_property
     def type(self):
         return [fp.get("type") for fp in self.json]
 
@@ -144,19 +146,19 @@ class RankingTable:
     """
     json: List[dict]
 
-    @property
+    @cached_property
     def id(self) -> List[str]:
         return [rtl.get("id") for rtl in self.json]
 
-    @property
+    @cached_property
     def level(self) -> List[int]:
         return [rtl.get("level") for rtl in self.json]
 
-    @property
+    @cached_property
     def reputation(self) -> List[int]:
         return [rtl.get("reputation") for rtl in self.json]
 
-    @property
+    @cached_property
     def title(self) -> List[str]:
         return [rtl.get("title") for rtl in self.json]
 
@@ -197,51 +199,51 @@ class AdvancedSettings:
     """
     json: dict
 
-    @property
+    @cached_property
     def catalogEnabled(self) -> Optional[bool]:
         return self.json.get("catalogEnabled")
 
-    @property
+    @cached_property
     def defaultRankingTypeInLeaderboard(self) -> int:
         return self.json.get("defaultRankingTypeInLeaderboard")
 
-    @property
+    @cached_property
     def facebookAppIdList(self) -> list:
         return self.json.get("facebookAppIdList") or []
 
-    @property
+    @cached_property
     def feedPages(self) -> FeedPageList:
         return FeedPageList(self.json.get("newsfeedPages") or [])
 
-    @property
+    @cached_property
     def frontPageLayout(self) -> int:
         return self.json.get("frontPageLayout")
 
-    @property
+    @cached_property
     def hasPendingReviewRequest(self) -> Optional[bool]:
         return self.json.get("hasPendingReviewRequest")
 
-    @property
+    @cached_property
     def joinedBaselineCollectionIdList(self) -> list:
         return self.json.get("joinedBaselineCollectionIdList") or []
 
-    @property
+    @cached_property
     def leaderboardStyle(self) -> dict:  # ...
         return self.json.get("leaderboardStyle") or {}
 
-    @property
+    @cached_property
     def pollMinFullBarVoteCount(self) -> int:
         return self.json.get("pollMinFullBarVoteCount")
 
-    @property
+    @cached_property
     def rankingTable(self) -> RankingTable:
         return RankingTable(self.json.get("rankingTable") or [])
 
-    @property
+    @cached_property
     def welcomeMessageEnabled(self) -> Optional[bool]:
         return self.json.get("welcomeMessageEnabled")
 
-    @property
+    @cached_property
     def welcomeMessage(self) -> Optional[str]:
         return self.json.get("welcomeMessageText")
 
@@ -289,70 +291,70 @@ class Agent:
     """
     json: dict
 
-    @property
+    @cached_property
     def accountMembershipStatus(self) -> int:
         return self.json.get("accountMembershipStatus")
 
-    @property
+    @cached_property
     def comId(self) -> Optional[int]:
         """Community id."""
         return self.json.get("ndcId")
 
-    @property
+    @cached_property
     def followersCount(self) -> int:
         """User followers count."""
         return self.json.get("membersCount")
 
-    @property
+    @cached_property
     def followingStatus(self) -> int:
         """User following status."""
         return self.json.get("followingStatus")
 
-    @property
+    @cached_property
     def icon(self) -> Optional[str]:
         """User icon url."""
         return self.json.get("icon")
 
-    @property
+    @cached_property
     def id(self) -> str:
         """User id."""
         return self.json.get("uid")
 
-    @property
+    @cached_property
     def isGlobal(self) -> bool:
         """Is Global or Community profile"""
         return self.json.get("isGlobal")
 
-    @property
+    @cached_property
     def level(self) -> int:
         """Community user level."""
         return self.json.get("level")
 
-    @property
+    @cached_property
     def membershipStatus(self) -> int:
         """User membership status."""
         return self.json.get("membershipStatus")
 
-    @property
+    @cached_property
     def nickname(self) -> str:
         """User nickname"""
         return self.json.get("nickname")
 
-    @property
+    @cached_property
     def nicknameVerified(self) -> bool:
         return self.json.get("isNicknameVerified")
 
-    @property
+    @cached_property
     def reputation(self) -> Optional[int]:
         """Community user reputation."""
         return self.json.get("reputation") or 0
 
-    @property
+    @cached_property
     def role(self) -> int:
         """Community user role."""
         return self.json.get("role") or 111
 
-    @property
+    @cached_property
     def status(self) -> int:
         return self.json.get("status")
 
@@ -369,6 +371,9 @@ class Extensions:
     """
     json: dict
 
+    @cached_property
+    def iTagIdList(self) -> List[int]:
+        return self.json.get('iTagIdList') or []
 
 
 @dataclass(repr=False)
@@ -387,12 +392,12 @@ class HomeNavigationList:
     """
     json: List[dict]
 
-    @property
+    @cached_property
     def id(self) -> List[str]:
         """Navigation page id."""
         return [nl.get("id") for nl in self.json]
 
-    @property
+    @cached_property
     def isStartPage(self) -> List[Optional[bool]]:
         """Is start page."""
         return [nl.get("isStartPage") for nl in self.json]
@@ -414,17 +419,17 @@ class HomePage:
     """
     json: dict
 
-    @property
+    @cached_property
     def id(self) -> List[str]:
         """Navigation page id."""
         return self.navigation.id
 
-    @property
+    @cached_property
     def isStartPage(self) -> List[Optional[bool]]:
         """Is start page."""
         return self.navigation.isStartPage
 
-    @property
+    @cached_property
     def navigation(self) -> HomeNavigationList:
         """Home page navigation."""
         return HomeNavigationList(self.json.get("navigation") or [])
@@ -445,7 +450,7 @@ class LeftSidePanelStyle:
     """
     json: dict
 
-    @property
+    @cached_property
     def iconColor(self) -> Optional[str]:
         return self.json.get("iconColor")
 
@@ -464,7 +469,7 @@ class NavigationLevelList:
     """
     json: List[dict]
 
-    @property
+    @cached_property
     def id(self) -> List[str]:
         return [ll.get("id") for ll in self.json]
 
@@ -489,19 +494,19 @@ class Navigation:
     """
     json: dict
 
-    @property
+    @cached_property
     def level1(self) -> NavigationLevelList:
         return NavigationLevelList(self.json.get("level1") or [])
 
-    @property
+    @cached_property
     def level1Ids(self) -> List[str]:
         return self.level1.id
 
-    @property
+    @cached_property
     def level2(self) -> NavigationLevelList:
         return NavigationLevelList(self.json.get("level2") or [])
 
-    @property
+    @cached_property
     def level2Ids(self) -> List[str]:
         return self.level2.id
 
@@ -524,17 +529,17 @@ class LeftSidePanel:
     """
     json: dict
 
-    @property
+    @cached_property
     def iconColor(self) -> Optional[str]:
         """Panel icon color."""
         return self.style.iconColor
 
-    @property
+    @cached_property
     def navigation(self) -> Navigation:
         """Panel navigation configuration."""
         return Navigation(self.json.get("navigation") or {})
 
-    @property
+    @cached_property
     def style(self) -> LeftSidePanelStyle:
         """Panel style."""
         return LeftSidePanelStyle(self.json.get("style") or {})
@@ -556,11 +561,11 @@ class Appearance:
     """
     json: dict
 
-    @property
+    @cached_property
     def homePage(self) -> HomePage:
         return HomePage(self.json.get("homePage") or {})
 
-    @property
+    @cached_property
     def leftSidePanel(self) -> LeftSidePanel:
         return LeftSidePanel(self.json.get("leftSidePanel") or {})
 
@@ -581,12 +586,12 @@ class WelcomeMessage:
     """
     json: dict
 
-    @property
+    @cached_property
     def enabled(self) -> Optional[bool]:
         """Welcome message enabled."""
         return self.json.get("enabled")
 
-    @property
+    @cached_property
     def text(self) -> Optional[str]:
         """Welcome message value."""
         return self.json.get("text")
@@ -627,51 +632,51 @@ class General:
     """
     json: dict
 
-    @property
+    @cached_property
     def accountMembershipEnabled(self) -> bool:
         return self.json.get("accountMembershipEnabled")
 
-    @property
+    @cached_property
     def disableLiveLayerActive(self) -> bool:
         return self.json.get("disableLiveLayerActive")
 
-    @property
+    @cached_property
     def disableLiveLayerVisible(self) -> bool:
         return self.json.get("disableLiveLayerVisible")
 
-    @property
+    @cached_property
     def facebookAppIdList(self) -> list:
         return self.json.get("facebookAppIdList") or []
 
-    @property
+    @cached_property
     def hasPendingReviewRequest(self) -> bool:
         return self.json.get("hasPendingReviewRequest")
 
-    @property
+    @cached_property
     def invitePermission(self) -> int:
         return self.json.get("invitePermission")
 
-    @property
+    @cached_property
     def joinedBaselineCollectionIdList(self) -> list:
         return self.json.get("joinedBaselineCollectionIdList") or []
 
-    @property
+    @cached_property
     def joinedTopicIdList(self):
         return self.json.get("joinedTopicIdList") or []
 
-    @property
+    @cached_property
     def onlyAllowOfficialTag(self) -> bool:
         return self.json.get("onlyAllowOfficialTag")
 
-    @property
+    @cached_property
     def premiumFeatureEnabled(self) -> bool:
         return self.json.get("premiumFeatureEnabled")
 
-    @property
+    @cached_property
     def videoUploadPolicy(self) -> int:
         return self.json.get("videoUploadPolicy")
 
-    @property
+    @cached_property
     def welcomeMessage(self) -> WelcomeMessage:
         return WelcomeMessage(self.json.get("welcomeMessage") or {})
 
@@ -692,12 +697,12 @@ class PostPermission:
     """
     json: dict
 
-    @property
+    @cached_property
     def minLevel(self) -> Optional[Literal[1, 2, 3, 4, 5, 6, 7, 8, 9]]:
         """Min user level."""
         return self.json.get("minLevel") or 0
 
-    @property
+    @cached_property
     def type(self) -> int:
         """Posting permission. (anyone, minlevel, onlystaff)"""
         return self.json.get("type")
@@ -721,17 +726,17 @@ class PostPrivilege:
     """
     json: dict
 
-    @property
+    @cached_property
     def enabled(self) -> bool:
         """Post type enabled."""
         return self.json.get("enabled")
 
-    @property
+    @cached_property
     def minLevel(self) -> int:
         """Min user level."""
         return self.permission.minLevel
 
-    @property
+    @cached_property
     def permission(self) -> PostPermission:
         """Posting permission."""
         return PostPermission(self.json.get("privilege") or {})
@@ -755,17 +760,17 @@ class CatalogModule:
     """
     json: dict
 
-    @property
+    @cached_property
     def curationEnabled(self) -> bool:
         """Wiki curation enabled."""
         return self.json.get("curationEnabled")
 
-    @property
+    @cached_property
     def enabled(self) -> bool:
         """Wiki enabled."""
         return self.json.get("enabled")
 
-    @property
+    @cached_property
     def privilege(self):
         """Wiki privilege."""
         return PostPrivilege(self.json.get("privilege") or {})
@@ -791,19 +796,19 @@ class AvChat:
     """
     json: dict
 
-    @property
+    @cached_property
     def audioEnabled(self) -> bool:
         return self.json.get("audioEnabled")
 
-    @property
+    @cached_property
     def audio2Enabled(self) -> bool:
         return self.json.get("audio2Enabled")
 
-    @property
+    @cached_property
     def screeningRoomEnabled(self) -> bool:
         return self.json.get("screeningRoomEnabled")
 
-    @property
+    @cached_property
     def videoEnabled(self) -> bool:
         """Stream chat enabled."""
         return self.json.get("videoEnabled")
@@ -831,27 +836,27 @@ class ChatModule:
     """
     json: dict
 
-    @property
+    @cached_property
     def avChat(self) -> AvChat:
         """Live chat configuration."""
         return AvChat(self.json.get("avChat") or {})
 
-    @property
+    @cached_property
     def enabled(self) -> bool:
         """Chat module enabled."""
         return self.json.get("enabled")
 
-    @property
+    @cached_property
     def publicChat(self) -> PostPrivilege:
         """Public chat Privileges."""
         return PostPrivilege(self.json.get("publicChat") or {})
 
-    @property
+    @cached_property
     def publicChatEnabled(self):
         """Public chat enabled."""
         return self.publicChat.enabled
 
-    @property
+    @cached_property
     def spamProtectionEnabled(self) -> bool:
         """Chat text spam protection enabled."""
         return self.json.get("spamProtectionEnabled")
@@ -871,7 +876,7 @@ class ExternalContentModule:
     """
     json: dict
 
-    @property
+    @cached_property
     def enabled(self) -> bool:
         """External content enabled."""
         return self.json.get("enabled")
@@ -901,32 +906,32 @@ class FeaturedModule:
     """
     json: dict
 
-    @property
+    @cached_property
     def enabled(self) -> bool:
         """Featured moduel enabled."""
         return self.json.get("enabled")
 
-    @property
+    @cached_property
     def feedLayout(self) -> Literal[1, 2, 3, 4, 5, 6]:
         """Feature feed layout."""
         return self.json.get("layout")
 
-    @property
+    @cached_property
     def lockMember(self) -> bool:
         """..."""
         return self.json.get("lockMember")
 
-    @property
+    @cached_property
     def memberEnabled(self) -> bool:
         """Feature members."""
         return self.json.get("memberEnabled")
 
-    @property
+    @cached_property
     def postEnabled(self) -> bool:
         """Feature posts."""
         return self.json.get("postEnabled")
 
-    @property
+    @cached_property
     def publicChatEnabled(self) -> bool:
         """Feature public chatrooms."""
         return self.json.get("publicChatRoomEnabled")
@@ -954,27 +959,27 @@ class InfluencerModule:
     """
     json: dict
 
-    @property
+    @cached_property
     def enabled(self) -> bool:
         """Vip module enabled."""
         return self.json.get("enabled")
 
-    @property
+    @cached_property
     def lock(self) -> bool:
         """Locked module."""
         return self.json.get("lock")
 
-    @property
+    @cached_property
     def maxMonthlyFee(self) -> int:
         """Max monthly fee price."""
         return self.json.get("maxVipMonthlyFee")
 
-    @property
+    @cached_property
     def maxVipNumbers(self) -> int:
         """Max vip member numbers."""
         return self.json.get("maxVipNumbers")
 
-    @property
+    @cached_property
     def minMonthlyFee(self) -> int:
         """Min monthly fee price."""
         return self.json.get("minVipMonthlyFee")
@@ -994,7 +999,7 @@ class TopicCategoriesModule:
     """
     json: dict
 
-    @property
+    @cached_property
     def enabled(self) -> bool:
         """Post categories module enabled."""
         return self.json.get("enabled")
@@ -1034,57 +1039,57 @@ class Post:
     """
     json: dict
 
-    @property
+    @cached_property
     def blog(self) -> PostPrivilege:
         """Blog posting privileges"""
         return PostPrivilege(self.json.get("blog") or {})
 
-    @property
+    @cached_property
     def image(self) -> PostPrivilege:
         """Image posting privileges."""
         return PostPrivilege(self.json.get("image") or {})
 
-    @property
+    @cached_property
     def liveMode(self) -> PostPrivilege:
         """Live mode posting privileges."""
         return PostPrivilege(self.json.get("liveMode") or {})
 
-    @property
+    @cached_property
     def poll(self) -> PostPrivilege:
         """Poll posting privileges."""
         return PostPrivilege(self.json.get("poll") or {})
 
-    @property
+    @cached_property
     def publicChat(self) -> PostPrivilege:
         """Public chat posting privileges."""
         return PostPrivilege(self.json.get("publicChatRooms") or {})
 
-    @property
+    @cached_property
     def question(self) -> PostPrivilege:
         """Question posting privileges."""
         return PostPrivilege(self.json.get("question") or {})
 
-    @property
+    @cached_property
     def quiz(self) -> PostPrivilege:
         """Quiz posting privileges."""
         return PostPrivilege(self.json.get("quiz") or {})
 
-    @property
+    @cached_property
     def screeningRoom(self) -> PostPrivilege:
         """Screening room posting privileges."""
         return PostPrivilege(self.json.get("screeningRoom") or {})
 
-    @property
+    @cached_property
     def story(self) -> PostPrivilege:
         """Story posting privileges."""
         return PostPrivilege(self.json.get("story") or {})
 
-    @property
+    @cached_property
     def webLink(self) -> PostPrivilege:
         """Web link posting privileges."""
         return PostPrivilege(self.json.get("webLink") or {})
 
-    @property
+    @cached_property
     def wikiEntry(self) -> PostPrivilege:
         """Wiki entry posting privileges."""
         return PostPrivilege(self.json.get("catalogEntry") or {})
@@ -1128,67 +1133,67 @@ class PostModule:
     """
     json: dict
 
-    @property
+    @cached_property
     def blog(self) -> PostPrivilege:
         """Blog posts."""
         return self.postType.blog
 
-    @property
+    @cached_property
     def enabled(self) -> bool:
         """Post module enabled."""
         return self.json.get("enabled")
 
-    @property
+    @cached_property
     def image(self) -> PostPrivilege:
         """Image posts."""
         return self.postType.image
 
-    @property
+    @cached_property
     def liveMode(self) -> PostPrivilege:
         """Live mode posts."""
         return self.postType.liveMode
 
-    @property
+    @cached_property
     def poll(self) -> PostPrivilege:
         """Poll posts."""
         return self.postType.poll
 
-    @property
+    @cached_property
     def publicChat(self) -> PostPrivilege:
         """Public chat posts."""
         return self.postType.publicChat
 
-    @property
+    @cached_property
     def question(self) -> PostPrivilege:
         """Question posts."""
         return self.postType.question
 
-    @property
+    @cached_property
     def postType(self) -> Post:
         """Post types."""
         return Post(self.json.get("postType") or {})
 
-    @property
+    @cached_property
     def quiz(self) -> PostPrivilege:
         """Quiz posts."""
         return self.postType.quiz
 
-    @property
+    @cached_property
     def screeningRoom(self) -> PostPrivilege:
         """Screening room posts."""
         return self.postType.screeningRoom
 
-    @property
+    @cached_property
     def story(self) -> PostPrivilege:
         """Story posts."""
         return self.postType.story
 
-    @property
+    @cached_property
     def webLink(self) -> PostPrivilege:
         """Web link posts."""
         return self.postType.webLink
 
-    @property
+    @cached_property
     def wikiEntry(self) -> PostPrivilege:
         """Wiki entry posts."""
         return self.postType.wikiEntry
@@ -1213,19 +1218,19 @@ class Leaderboard:
     """
     json: List[dict]
 
-    @property
+    @cached_property
     def enabled(self) -> List[bool]:
         return [lb.get("enabled") for lb in self.json]
 
-    @property
+    @cached_property
     def id(self) -> List[str]:
         return [lb.get("id") for lb in self.json]
 
-    @property
+    @cached_property
     def style(self) -> List[Optional[str]]:
         return [lb.get("style") for lb in self.json]
 
-    @property
+    @cached_property
     def type(self) -> List[int]:
         return [lb.get("type") for lb in self.json]
 
@@ -1252,23 +1257,23 @@ class RankingModule:
     """
     json: dict
 
-    @property
+    @cached_property
     def defaultLeaderboardType(self) -> int:
         return self.json.get("defaultLeaderboardType")
 
-    @property
+    @cached_property
     def enabled(self) -> bool:
         return self.json.get("enabled")
 
-    @property
+    @cached_property
     def leaderboard(self) -> Leaderboard:
         return Leaderboard(self.json.get("leaderboardList") or [])
 
-    @property
+    @cached_property
     def leaderboardEnabled(self) -> bool:
         return self.json.get("leaderboardEnabled")
 
-    @property
+    @cached_property
     def rankingTable(self) -> RankingTable:
         return RankingTable(self.json.get("rankingTable") or [])
 
@@ -1293,22 +1298,22 @@ class SharedFolderModule:
     """
     json: dict
 
-    @property
+    @cached_property
     def albumManage(self) -> PostPrivilege:
         """Album manage privilege."""
         return PostPrivilege(self.json.get("albumManagePrivilege") or {})
 
-    @property
+    @cached_property
     def albumManageMinLevel(self) -> Optional[int]:
         """Minimum user level for manage albums"""
         return self.albumManage.minLevel
 
-    @property
+    @cached_property
     def enabled(self) -> bool:
         """Shared folder module enabled."""
         return self.json.get("enabled")
 
-    @property
+    @cached_property
     def upload(self) -> PostPrivilege:
         """Uploading privilege."""
         return PostPrivilege(self.json.get("uploadPrivilege") or {})
@@ -1344,47 +1349,47 @@ class Module:
     """
     json: dict
 
-    @property
+    @cached_property
     def chat(self) -> ChatModule:
         """Community chat module."""
         return ChatModule(self.json.get("chat") or {})
 
-    @property
+    @cached_property
     def externalContent(self) -> ExternalContentModule:
         """Community external content module."""
         return ExternalContentModule(self.json.get("externalContent") or {})
 
-    @property
+    @cached_property
     def featured(self) -> FeaturedModule:
         """Community featured module."""
         return FeaturedModule(self.json.get("featured") or {})
 
-    @property
+    @cached_property
     def vip(self) -> InfluencerModule:
         """Communiry vip module."""
         return InfluencerModule(self.json.get("influencer") or {})
 
-    @property
+    @cached_property
     def postCategories(self) -> TopicCategoriesModule:
         """Community post categories module."""
         return TopicCategoriesModule(self.json.get("topicCategories") or {})
 
-    @property
+    @cached_property
     def posts(self) -> PostModule:
         """Community post module."""
         return PostModule(self.json.get("post") or {})
 
-    @property
+    @cached_property
     def ranking(self) -> RankingModule:
         """Community member ranking module."""
         return RankingModule(self.json.get("ranking") or {})
 
-    @property
+    @cached_property
     def sharedFolder(self) -> SharedFolderModule:
         """Community shared folder module."""
         return SharedFolderModule(self.json.get("sharedFolder") or {})
 
-    @property
+    @cached_property
     def wiki(self) -> CatalogModule:
         """Community wiki module."""
         return CatalogModule(self.json.get("catalog") or {})
@@ -1408,17 +1413,17 @@ class CustomPage:
     """
     json: List[dict]
 
-    @property
+    @cached_property
     def alias(self) -> List[Optional[str]]:
         """Pages aliases."""
         return [cl.get("alias") for cl in self.json]
 
-    @property
+    @cached_property
     def id(self) -> List[str]:
         """Pages ids."""
         return [cl.get("id") for cl in self.json]
 
-    @property
+    @cached_property
     def url(self) -> List[str]:
         """Pages urls."""
         return [cl.get("url") for cl in self.json]
@@ -1458,12 +1463,12 @@ class Page:
     """
     json: dict
 
-    @property
+    @cached_property
     def custom(self) -> CustomPage:
         """Community custom pages."""
         return CustomPage(self.json.get("customList") or [])
 
-    @property
+    @cached_property
     def default(self) -> DefaultPage:
         """Community default pages."""
         return DefaultPage(self.json.get("defaultList") or [])
@@ -1489,22 +1494,22 @@ class Configuration:
     """
     json: dict
 
-    @property
+    @cached_property
     def appearance(self) -> Appearance:
         """Community appearance configuration."""
         return Appearance(self.json.get("appearance") or {})
 
-    @property
+    @cached_property
     def general(self) -> General:
         """Communirt general configuration."""
         return General(self.json.get("general") or {})
 
-    @property
+    @cached_property
     def module(self) -> Module:
         """Community module configuration."""
         return Module(self.json.get("module") or {})
 
-    @property
+    @cached_property
     def page(self) -> Page:
         """Community page configuration."""
         return Page(self.json.get("page") or {})
@@ -1524,7 +1529,7 @@ class PromotionalMedia:
     """
     json: List[Tuple[int, str, None]]
 
-    @property
+    @cached_property
     def url(self) -> List[str]:
         """Promotional media urls."""
         return [m[1] if m else None for m in self.json]
@@ -1550,25 +1555,64 @@ class ThemePack:
     """
     json: dict
 
-    @property
+    @cached_property
     def color(self) -> str:
         """Hex color code."""
         return self.json.get("themeColor")
 
-    @property
+    @cached_property
     def hash(self) -> str:
         """Theme pack hash."""
         return self.json.get("themePackHash")
 
-    @property
+    @cached_property
     def revision(self) -> int:
         """Theme pack revision."""
         return self.json.get("themePackRevision")
 
-    @property
+    @cached_property
     def url(self) -> str:
         """Theme pack resource url. (zip)"""
         return self.json.get("themePackUrl")
+
+
+@dataclass(repr=False)
+class MediaList:
+    """Represent the media list.
+
+    Attributes
+    ----------
+    json: List[Tuple[:class:`int`, :class`str`, `None`, :class:`str`]]
+        The raw API data.
+    id: List[:class:`str`]
+        Media identifiers.
+    type: List[:class:`int`]
+        Media types.
+    url: List[:class:`str`]
+        Media urls.
+
+    """
+    json: List[Tuple[int, str, None, str]]
+
+    @cached_property
+    def id(self) -> List[str]:
+        """Media identifiers."""
+        return [m[3] if len(m) > 3 else None for m in self.json]
+
+    @cached_property
+    def type(self) -> List[int]:
+        """Media types."""
+        return [m[0] for m in self.json]
+
+    @cached_property
+    def url(self) -> List[str]:
+        """Media urls."""
+        return [m[1] for m in self.json]
+
+    @cached_property
+    def null(self) -> list:
+        """Unknow value. (comming soon)"""
+        return [m[2] for m in self.json]
 
 
 @dataclass(repr=False)
@@ -1615,7 +1659,7 @@ class Community:
         Community link.
     listedStatus: :class:`int`
         Community listed status.
-    mediaList: :class:`list`
+    media: :class:`MediaList`
         Community media list.
     membersCount: :class:`int`
         Community members count.
@@ -1641,161 +1685,168 @@ class Community:
         Community template id.
     updatedTime: :class:`str`
         Community updated date.
+    vips: :class:`UserProfileList`
+        Community vip users.
 
     """
     json: dict
 
-    @property
+    @cached_property
     def activeInfo(self) -> ActiveInfo:
         """Community active info."""
         return ActiveInfo(self.json.get("activeInfo") or {})
 
-    @property
+    @cached_property
     def addedTopic(self) -> AddedTopic:
         """Community added topics."""
         return AddedTopic(self.json.get("userAddedTopicList") or [])
 
-    @property
+    @cached_property
     def advancedSettings(self) -> AdvancedSettings:
         """Community advanced settings."""
         return AdvancedSettings(self.json.get("advancedSettings") or {})
 
-    @property
+    @cached_property
     def agent(self) -> Agent:
         """Community user agent profile."""
         return Agent(self.json.get("agent") or {})
 
-    @property
+    @cached_property
     def aminoId(self) -> str:
         """Community amino id."""
         return self.json.get("endpoint")
 
-    @property
+    @cached_property
     def configuration(self) -> Configuration:
         """Community configuration."""
         return Configuration(self.json.get("configuration") or {})
 
-    @property
+    @cached_property
     def createdTime(self) -> str:
         """Community created date."""
         return self.json.get("createdTime")
 
-    @property
+    @cached_property
     def description(self) -> Optional[str]:
         """Community description."""
         return self.json.get("content")
 
-    @property
+    @cached_property
     def extensions(self) -> Extensions:
         """Community extensions."""
         return Extensions(self.json.get("extensions") or {})
 
-    @property
-    def heat(self) -> int:
+    @cached_property
+    def heat(self) -> float:
         """Community heat."""
-        return self.json.get("communityHeat")
+        return self.json.get("communityHeat") or 0.0
 
-    @property
+    @cached_property
     def icon(self) -> str:
         """Community icon url."""
         return self.json.get("icon")
 
-    @property
+    @cached_property
     def id(self) -> int:
         """Community id."""
         return self.json.get("ndcId")
 
-    @property
+    @cached_property
     def isStandaloneAppDeprecated(self) -> bool:
         """Is standalone app deprecated."""
         return self.json.get("isStandaloneAppDeprecated")
 
-    @property
+    @cached_property
     def isStandaloneAppMonetizationEnabled(self) -> bool:
         """Is standalone app monetization enabled."""
         return self.json.get("isStandaloneAppMonetizationEnabled")
 
-    @property
+    @cached_property
     def joinType(self) -> int:
         """Community join type."""
         return self.json.get("joinType")
 
-    @property
+    @cached_property
     def keywords(self) -> Optional[str]:
         """Community search keywords."""
         return self.json.get("keywords")
 
-    @property
+    @cached_property
     def link(self) -> str:
         """Community link."""
         return self.json.get("link")
 
-    @property
+    @cached_property
     def listedStatus(self) -> int:
         """Community listed status."""
         return self.json.get("listedStatus")
 
-    @property
-    def mediaList(self) -> list:
+    @cached_property
+    def media(self) -> MediaList:
         """Community media list."""
-        return self.json.get("mediaList") or []
+        return MediaList(self.json.get("mediaList") or [])
 
-    @property
+    @cached_property
     def membersCount(self) -> int:
         """Community members count."""
         return self.json.get("membersCount")
 
-    @property
+    @cached_property
     def modifiedTime(self) -> str:
         """Community last modified date."""
         return self.json.get("modifiedTime")
 
-    @property
+    @cached_property
     def name(self) -> str:
         """Community name."""
         return self.json.get("name")
 
-    @property
+    @cached_property
     def primaryLanguage(self) -> str:
         """Community language."""
         return self.json.get("primaryLanguage")
 
-    @property
+    @cached_property
     def probationStatus(self) -> int:
         """Community probation status."""
         return self.json.get("probationStatus")
 
-    @property
+    @cached_property
     def promotionalMedia(self) -> PromotionalMedia:
         """Community promotional media."""
         return PromotionalMedia(self.json.get("promotionalMediaList") or [])
 
-    @property
+    @cached_property
     def searchable(self) -> bool:
         """Searchable community."""
         return self.json.get("searchable")
 
-    @property
+    @cached_property
     def status(self) -> int:
         """Community status."""
         return self.json.get("status")
 
-    @property
+    @cached_property
     def tagline(self) -> str:
         """Community tagline."""
         return self.json.get("tagline")
 
-    @property
+    @cached_property
     def themePack(self) -> ThemePack:
         """Community theme pack."""
         return ThemePack(self.json.get("themePack") or {})
 
-    @property
+    @cached_property
     def templateId(self) -> int:
         """Community template id."""
         return self.json.get("templateId")
 
-    @property
+    @cached_property
     def updatedTime(self) -> str:
         """Community updated date."""
         return self.json.get("updatedTime")
+
+    @cached_property
+    def vips(self) -> UserProfileList:
+        """Community vip users."""
+        return UserProfileList(self.json.get('influencerList') or [])

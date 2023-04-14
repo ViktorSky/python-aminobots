@@ -20,29 +20,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
 from dataclasses import dataclass
-from functools import cached_property
 
-__all__ = ('Paging',)
+__all__ = ('UserInfoInJoinedCommunities',)
 
 
 @dataclass(repr=False)
-class Paging:
-    """Represent a Paging of Amino.
-
-    Attributes
-    ----------
-    json: :class:`dict`
-        The raw API data.
-    nextPageToken: :class:`str`
-        Next Page token.
-
-    """
-
+class UserInfoInJoinedCommunities:
     json: dict
-
-    @cached_property
-    def nextPageToken(self) -> str:
-        return self.json.get("nextPageToken")
-

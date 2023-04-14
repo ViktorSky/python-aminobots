@@ -22,6 +22,7 @@ SOFTWARE.
 """
 from dataclasses import dataclass
 from typing import Optional
+from functools import cached_property
 from .userprofile import UserProfile
 
 __all__ = ('CurrentUserInfo',)
@@ -59,52 +60,52 @@ class CurrentUserInfo:
     """
     json: dict
 
-    @property
+    @cached_property
     def bio(self) -> Optional[str]:
         """User bio."""
         return self.user.bio
 
-    @property
+    @cached_property
     def consecutiveCheckInDays(self) -> int:
         """Check-in days."""
         return self.user.consecutiveCheckInDays
 
-    @property
+    @cached_property
     def icon(self) -> str:
         """User icon url."""
         return self.user.icon
 
-    @property
+    @cached_property
     def id(self) -> str:
         """User id."""
         return self.user.id
 
-    @property
+    @cached_property
     def level(self) -> int:
         """Community user level."""
         return self.user.level
 
-    @property
+    @cached_property
     def nickname(self) -> str:
         """User nickname."""
         return self.user.nickname
 
-    @property
+    @cached_property
     def notificationsCount(self) -> int:
         """Notifications count."""
         return self.json.get('notificationsCount') or 0
 
-    @property
+    @cached_property
     def reputation(self) -> int:
         """Community user reputation."""
         return self.user.reputation
 
-    @property
+    @cached_property
     def role(self) -> int:
         """Community user role."""
         return self.user.role
 
-    @property
+    @cached_property
     def user(self) -> UserProfile:
         """User profile object."""
         return UserProfile(self.json.get('userProfile') or {})

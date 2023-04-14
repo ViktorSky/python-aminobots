@@ -23,6 +23,7 @@ SOFTWARE.
 
 from dataclasses import dataclass
 from typing import List, Literal, Optional, Tuple
+from functools import cached_property
 from .account import DeviceInfo
 from .communitylist import CommunityList
 
@@ -43,7 +44,7 @@ class BackgroundMedia:
     """
     json: List[Tuple[int, str, None, None, None, dict]]
 
-    @property
+    @cached_property
     def url(self) -> Optional[str]:
         """Background url."""
         if self.json and any(self.json[0]):
@@ -64,7 +65,7 @@ class Media:
     """
     json: list
 
-    @property
+    @cached_property
     def url(self) -> List[str]:
         return [m[1] if m else None for m in self.json]
 
@@ -87,17 +88,17 @@ class Style:
     """
     json: dict
 
-    @property
+    @cached_property
     def background(self) -> BackgroundMedia:
         """Backround object."""
         return BackgroundMedia(self.json.get("backgroundMediaList") or [])
 
-    @property
+    @cached_property
     def backgroundColor(self) -> Optional[str]:
         """Color hex code."""
         return self.json.get("backgroundColor")
 
-    @property
+    @cached_property
     def backgroundUrl(self) -> Optional[str]:
         """Backround url."""
         return self.background.url
@@ -147,90 +148,90 @@ class Extensions:
     """
     json: dict
 
-    @property
+    @cached_property
     def acpDeeplink(self) -> Optional[str]:
         return self.json.get("acpDeeplink")
 
-    @property
+    @cached_property
     def adsEnabled(self) -> Optional[bool]:
         return self.json.get("adsEnabled")
 
-    @property
+    @cached_property
     def adsFlags(self) -> Optional[int]:
         return self.json.get("adsFlags")
 
-    @property
+    @cached_property
     def background(self) -> BackgroundMedia:
         """User background."""
         return self.style.background
 
-    @property
+    @cached_property
     def backroundColor(self) -> Optional[str]:
         """Color hex code."""
         return self.style.backgroundColor
 
-    @property
+    @cached_property
     def backgroundUrl(self) -> Optional[str]:
         return self.style.backgroundUrl
 
-    @property
+    @cached_property
     def creatorDeeplink(self) -> Optional[str]:
         return self.json.get("creatorDeeplink")
         # https://aminoapps.page.link/6CTa
 
-    @property
+    @cached_property
     def customTitles(self):
         return self.json.get("customTitles")
 
-    @property
+    @cached_property
     def defaultBubbleId(self) -> Optional[str]:
         return self.json.get("defaultBubbleId")
 
-    @property
+    @cached_property
     def deviceInfo(self) -> DeviceInfo:
         return DeviceInfo(self.json.get("deviceInfo") or {})
 
-    # @property
+    # @cached_property
     # def disabledLevel(self):
     #     return self.json.get("__disabledLevel__")
 
-    # @property
+    # @cached_property
     # def disabledStatus(self):
     #     return self.json.get("__disabledStatus__")
 
-    # @property
+    # @cached_property
     # def disabledTime(self):
     #     return self.json.get("__disabledTime__")
 
-    # @property
+    # @cached_property
     # def isMemberOfTeamAmino(self) -> bool:
     #     return self.json.get("isMemberOfTeamAmino") or False
 
-    @property
+    @cached_property
     def privilegeOfChatInviteRequest(self) -> Optional[int]: # [1,]
         return self.json.get("privilegeOfChatInviteRequest")
 
-    @property
+    @cached_property
     def privilegeOfChatRequest(self) -> Optional[int]: # []
         return self.json.get("privilegeOfChatRequest")
 
-    @property
+    @cached_property
     def privilegeOfCommentOnUserProfile(self) -> Optional[int]: # [2, 3]
         return self.json.get("privilegeOfCommentOnUserProfile")
 
-    @property
+    @cached_property
     def privilegeOfPublicChat(self) -> Optional[Literal[0, 1]]:
         return self.json.get("privilegeOfPublicChat")
 
-    @property
+    @cached_property
     def privilegeOfVideoChat(self) -> Optional[int]: # [9,]
         return self.json.get("privilegeOfVideoChat")
 
-    @property
+    @cached_property
     def style(self) -> Style:
         return Style(self.json.get("style") or {})
 
-    @property
+    @cached_property
     def tippingPermStatus(self) -> Optional[Literal[0, 1]]:
         return self.json.get("tippingPermStatus")
 
@@ -263,42 +264,42 @@ class AvatarFrame:
     """
     json: dict
 
-    @property
+    @cached_property
     def id(self) -> str:
         """Avatar frame id."""
         return self.json.get("frameId")
 
-    @property
+    @cached_property
     def icon(self) -> str:
         """Avatar frame icon url."""
         return self.json.get("icon")
 
-    @property
+    @cached_property
     def name(self) -> str:
         """Avatar frame name."""
         return self.json.get("name")
 
-    @property
+    @cached_property
     def ownershipStatus(self) -> Optional[str]:
         """Ownership status."""
         return self.json.get("ownershipStatus")
 
-    @property
+    @cached_property
     def status(self) -> int:
         """Avatar frame status."""
         return self.json.get("status")
 
-    @property
+    @cached_property
     def type(self) -> int:
         """Avatar frame type."""
         return self.json.get("frameType")
 
-    @property
+    @cached_property
     def version(self) -> int:
         """Avatar frame version."""
         return self.json.get("version")
 
-    @property
+    @cached_property
     def url(self) -> str:
         """Avatar frame resource url. (zip)"""
         return self.json.get("resourceUrl")
@@ -412,231 +413,231 @@ class UserProfile:
     """
     json: dict
 
-    @property
+    @cached_property
     def accountMembershipStatus(self) -> Literal[0, 1]:
         """Account Membership status."""
         return self.json.get("accountMembershipStatus")
 
-    @property
+    @cached_property
     def acpDeeplink(self) -> Optional[str]:
         return self.extensions.acpDeeplink
 
-    @property
+    @cached_property
     def adminLogCountIn7Days(self):
         return self.json.get("adminLogCountIn7Days")
 
-    @property
+    @cached_property
     def aminoId(self) -> str:
         """Amino id."""
         return self.json.get("aminoId")
 
-    # @property  # not found
+    # @cached_property  # not found
     # def aminoIdEditable(self) -> bool:
         # return self.json.get("aminoIdEditable")
 
-    @property
+    @cached_property
     def avatar(self) -> AvatarFrame:
         """Avatar Frame object."""
         return AvatarFrame(self.json.get("avatarFrame") or {})
 
-    @property
+    @cached_property
     def avatarId(self):
         """Avatar frame id."""
         return self.json.get("avatarFrameId") or self.avatarFrame.id
 
-    @property
+    @cached_property
     def background(self) -> BackgroundMedia:
         """User background."""
         return self.extensions.style.background
 
-    @property
+    @cached_property
     def backgroundColor(self) -> Optional[str]:
         """Hex color string."""
         return self.extensions.style.backgroundColor
 
-    @property
+    @cached_property
     def bio(self) -> Optional[str]:
         """User bio."""
         return self.json.get("content")
 
-    @property
+    @cached_property
     def blogsCount(self) -> int:
         """Blogs count."""
         return self.json.get("blogsCount")
 
-    @property
+    @cached_property
     def comId(self) -> Optional[int]:
         """Profile community id."""
         return self.json.get("ndcId") or None
 
-    @property
+    @cached_property
     def commentsCount(self) -> int:
         return self.json.get("commentsCount") or 0
 
-    @property
+    @cached_property
     def consecutiveCheckInDays(self) -> Optional[int]:
         return self.json.get("consecutiveCheckInDays")
 
-    @property
+    @cached_property
     def createdTime(self) -> str:
         return self.json.get("createdTime")
 
-    @property
+    @cached_property
     def creatorDeeplink(self) -> Optional[str]:
         return self.extensions.creatorDeeplink
 
-    @property
+    @cached_property
     def defaultBubbleId(self) -> Optional[str]:
         return self.extensions.defaultBubbleId
 
-    @property
+    @cached_property
     def deviceInfo(self) -> DeviceInfo:
         return self.extensions.deviceInfo
 
-    @property
+    @cached_property
     def extensions(self) -> Extensions:
         return Extensions(self.json.get("extensions") or {})
 
-    @property
+    @cached_property
     def followersCount(self) -> int:
         return self.json.get("membersCount") or 0
 
-    @property
-    def followingCount(self) -> int:
+    @cached_property
+    def followingsCount(self) -> int:
         return self.json.get("joinedCount") or 0
 
-    @property
+    @cached_property
     def followingStatus(self) -> Literal[0, 1]:
         return self.json.get("followingStatus")
 
-    @property
+    @cached_property
     def icon(self) -> str:
         return self.json.get("icon")
 
-    @property
+    @cached_property
     def id(self) -> str:
         return self.json.get("uid")
 
-    @property
+    @cached_property
     def isGlobal(self) -> bool:
         return self.json.get("isGlobal")
 
-    @property
+    @cached_property
     def isnicknameVerified(self) -> bool:
         return self.json.get("isNicknameVerified")
 
-    @property
+    @cached_property
     def level(self) -> int:
         return self.json.get("level")
 
-    @property
+    @cached_property
     def linkedCommunities(self) -> CommunityList:
         return CommunityList(self.json.get("linkedCommunityList") or {})
 
-    @property
+    @cached_property
     def media(self) -> Media:
         return Media(self.json.get("mediaList") or [])
 
-    @property
+    @cached_property
     def membershipStatus(self) -> Literal[0, 1]:
         return self.json.get("membershipStatus")
 
-    @property
+    @cached_property
     def modifiedTime(self) -> str:
         return self.json.get("modifiedTime")
 
-    # @property
+    # @cached_property
     # def mood(self):
         # return self.json.get("mood")
 
-    # @property
+    # @cached_property
     # def moodSticker(self):  # ...
         # return self.json.get("moodSticker")
 
-    @property
+    @cached_property
     def nickname(self) -> str:
         """Community user nickname."""
         return self.json.get("nickname")
 
-    @property
+    @cached_property
     def notifSubStatus(self) -> Literal[0, 1]:
         """Notification Subscription Status."""
         return self.json.get("notificationSubscriptionStatus")
 
-    @property
+    @cached_property
     def onlineStatus(self) -> int: # [2]
         """Online status."""
         return self.json.get("onlineStatus")
 
-    @property
+    @cached_property
     def postsCount(self) -> int:
         """Post count."""
         return self.json.get("postsCount")
 
-    @property
+    @cached_property
     def privilegeOfChatInviteRequest(self) -> Optional[int]:
         """Privilege of chat invite request."""
         return self.extensions.privilegeOfChatInviteRequest
 
-    @property
+    @cached_property
     def privilegeOfChatRequest(self) -> int:
         """privilege of chat request."""
         return self.extensions.privilegeOfChatRequest
 
-    @property
+    @cached_property
     def privilegeOfCommentOnUserProfile(self) -> Optional[int]:
         """Privilege of comment on user profile."""
         return self.extensions.privilegeOfCommentOnUserProfile
 
-    @property
+    @cached_property
     def privilegeOfPublicChat(self) -> Optional[int]:
         """Privilege of public chat."""
         return self.extensions.privilegeOfPublicChat
 
-    @property
+    @cached_property
     def privilegeOfVideoChat(self) -> Optional[int]:
         """Privilege of video chat."""
         return self.extensions.privilegeOfVideoChat
 
-    @property
+    @cached_property
     def pushEnabled(self) -> bool:
         """Push enabled."""
         return self.json.get("pushEnabled")
 
-    @property
+    @cached_property
     def reputation(self) -> int:
         """Community user reputation."""
         return self.json.get("reputation")
 
-    @property
+    @cached_property
     def role(self) -> int:
         """Community user role."""
         return self.json.get("role")
 
-    @property
+    @cached_property
     def status(self) -> Literal[0, 1]:
         """Account status."""
         return self.json.get("status")
 
-    @property
+    @cached_property
     def storiesCount(self) -> int:
         """Stories count."""
         return self.json.get("storiesCount")
 
-    @property
+    @cached_property
     def style(self):
         return self.extensions.style
 
-    @property
+    @cached_property
     def tippingPermStatus(self) -> Optional[int]:
         """Tipping permission status."""
         return self.extensions.tippingPermStatus
 
-    @property
+    @cached_property
     def visitPrivacy(self) -> Optional[int]:  # [1]
         return self.json.get("visitPrivacy")
 
-    @property
+    @cached_property
     def wikisCount(self) -> int:
         """Wikis count."""
         return self.json.get("itemsCount")

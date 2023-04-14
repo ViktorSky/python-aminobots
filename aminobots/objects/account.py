@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 from dataclasses import dataclass
+from functools import cached_property
 from typing import (
     Literal,
     Optional
@@ -47,11 +48,11 @@ class Ads:
     """
     json: dict
 
-    @property
+    @cached_property
     def lastPopupTime(self) -> str:
         return self.json.get("lastPopupTime")
 
-    @property
+    @cached_property
     def status(self) -> int:
         return self.json.get("status")
 
@@ -70,7 +71,7 @@ class AdvancedSettings:
     """
     json: dict
 
-    @property
+    @cached_property
     def analyticsEnabled(self) -> int:
         return self.json.get("analyticsEnabled")
 
@@ -88,7 +89,7 @@ class DeviceInfo:
     """
     json: dict
 
-    @property
+    @cached_property
     def lastClientType(self) -> int:
         return self.json.get("lastClientType")
 
@@ -111,15 +112,15 @@ class PopupConfig:
     """
     json: dict
 
-    @property
+    @cached_property
     def ads(self) -> Ads:
         return Ads(self.json.get("ads", {}))
 
-    @property
+    @cached_property
     def adsStatus(self):
         return self.ads.status
 
-    @property
+    @cached_property
     def lastAdsPopupTime(self):
         return self.ads.lastPopupTime
 
@@ -152,35 +153,35 @@ class Extensions:
     """
     json: dict
 
-    @property
+    @cached_property
     def adsEnabled(self) -> bool:
         return self.json.get("adsEnabled")
 
-    @property
+    @cached_property
     def adsFlags(self) -> int:
         return self.json.get("adsFlags")
 
-    @property
+    @cached_property
     def adsLevel(self) -> int:
         return self.json.get("adsLevel")
 
-    @property
+    @cached_property
     def avatarFrameId(self) -> str:
         return self.json.get("avatarFrameId")
 
-    @property
+    @cached_property
     def contentLanguage(self) -> str:
         return self.json.get("contentLanguage")
 
-    @property
+    @cached_property
     def deviceInfo(self) -> DeviceInfo:
         return DeviceInfo(self.json.get("deviceInfo", {}))
 
-    @property
+    @cached_property
     def mediaLabAdsMigrationAugust2020(self) -> bool:
         return self.json.get("mediaLabAdsMigrationAugust2020")
 
-    @property
+    @cached_property
     def popupConfig(self) -> PopupConfig:
         return PopupConfig(self.json.get("popupConfig", {}))
 
@@ -262,130 +263,130 @@ class Account:
 
     json: dict
 
-    @property
+    @cached_property
     def activation(self) -> Literal[0, 1]:
         return self.json.get("activation")
 
-    @property
+    @cached_property
     def adsEnabled(self) -> bool:
         return self.extensions.adsEnabled
 
-    @property
+    @cached_property
     def advancedSettings(self) -> AdvancedSettings:
         return AdvancedSettings(self.json.get("advancedSettings", {}))
 
-    @property
+    @cached_property
     def aminoId(self) -> str:
         return self.json.get("aminoId")
 
-    @property
+    @cached_property
     def aminoIdEditable(self) -> bool:
         return self.json.get("aminoIdEditable")
 
-    @property
+    @cached_property
     def appleId(self) -> Optional[str]:
         return self.json.get("appleID")
 
-    @property
+    @cached_property
     def avatarFrameId(self) -> str:
         return self.extensions.avatarFrameId
 
-    @property
+    @cached_property
     def contentLanguage(self) -> str:
         return self.extensions.contentLanguage
 
-    @property
+    @cached_property
     def createdTime(self) -> str:
         return self.json.get("createdTime")
 
-    @property
+    @cached_property
     def deviceId(self) -> Optional[str]:
         return self.json.get("deviceID")
 
-    @property
+    @cached_property
     def deviceInfo(self) -> DeviceInfo:
         return self.extensions.deviceInfo
 
-    @property
+    @cached_property
     def email(self) -> Optional[str]:
         return self.json.get("email")
 
-    @property
+    @cached_property
     def emailActivation(self) -> Literal[0, 1]:
         return self.json.get("emailActivation")
 
-    @property
+    @cached_property
     def extensions(self) -> Extensions:
         return Extensions(self.json.get("extensions") or {})
 
-    @property
+    @cached_property
     def facebookId(self) -> Optional[str]:
         return self.json.get("facebookID")
 
-    @property
+    @cached_property
     def googleId(self) -> Optional[str]:
         return self.json.get("googleID")
 
-    @property
+    @cached_property
     def icon(self) -> str:
         return self.json.get("icon")
 
-    @property
+    @cached_property
     def linkedCommunity(self) -> CommunityList:
         return CommunityList(self.json.get("linkedCommunityList") or [])
 
-    @property
+    @cached_property
     def mediaLabAdsMigrationAugust2020(self) -> bool:
         return self.extensions.mediaLabAdsMigrationAugust2020
 
-    @property
+    @cached_property
     def membership(self):  # ...
         return self.json.get("membership")
 
-    @property
+    @cached_property
     def mediaList(self):  # ...
         return self.json.get("mediaList")
 
-    @property
+    @cached_property
     def modifiedTime(self) -> str:
         return self.json.get("modifiedTime")
 
-    @property
+    @cached_property
     def nickname(self) -> str:
         return self.json.get("nickname")
 
-    @property
+    @cached_property
     def phone(self) -> Optional[str]:
         return self.json.get("phoneNumber")
 
-    @property
+    @cached_property
     def phoneActivation(self) -> Literal[0, 1]:
         return self.json.get("phoneNumberActivation")
 
-    @property
+    @cached_property
     def popupConfig(self) -> PopupConfig:
         return self.extensions.popupConfig
 
-    @property
+    @cached_property
     def role(self) -> int:
         return self.json.get("role")
 
-    @property
+    @cached_property
     def securityLevel(self) -> int:  # (3,)
         return self.json.get("securityLevel")
 
-    @property
+    @cached_property
     def status(self) -> Literal[0, 1]:
         return self.json.get("status")
 
-    @property
+    @cached_property
     def twitterId(self) -> Optional[str]:
         return self.json.get("twitterID")
 
-    @property
+    @cached_property
     def userId(self) -> str:
         return self.json.get("uid")
 
-    @property
+    @cached_property
     def username(self) -> str:
         return self.json.get("username")

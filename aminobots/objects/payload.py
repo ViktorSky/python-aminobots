@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from dataclasses import dataclass
+from functools import cached_property
 
 __all__ = ('Payload',)
 
@@ -43,16 +44,16 @@ class Aps:
     """
     json: dict
 
-    @property
+    @cached_property
     def alert(self) -> str:
         """Alert text."""
         return self.json.get('alert')
 
-    @property
+    @cached_property
     def badge(self) -> int:
         return self.json.get('badge')
 
-    @property
+    @cached_property
     def sound(self) -> str:
         """Original App sound identifier. (java)"""
         return self.json.get('sound')
@@ -86,42 +87,42 @@ class Payload:
     """
     json: dict
 
-    @property
+    @cached_property
     def aps(self) -> Aps:
         """Alert aps."""
         return Aps(self.json.get('aps', dict()))
 
-    @property
+    @cached_property
     def chatId(self) -> str:
         """Chat id."""
         return self.json.get('tid')
 
-    @property
+    @cached_property
     def comId(self) -> str:
         """Community id."""
         return self.json.get('ndcId')
 
-    @property
+    @cached_property
     def createdTime(self) -> str:
         """Created date."""
         return self.json.get('ts')
 
-    @property
+    @cached_property
     def id(self) -> str:
         """Message id."""
         return self.json.get('id')
 
-    @property
+    @cached_property
     def isHidden(self) -> bool:
         """Is hidden message."""
         return self.json.get('isHidden')
 
-    @property
+    @cached_property
     def msgType(self) -> int:
         """Message type."""
         return self.json.get('msgType', 0)
 
-    @property
+    @cached_property
     def type(self) -> int:
         """Notification type."""
         return self.json.get('notifType', 0)

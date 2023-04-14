@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 from dataclasses import dataclass
+from functools import cached_property
 
 __all__ = ('Invitation',)
 
@@ -29,19 +30,19 @@ __all__ = ('Invitation',)
 class InfluencerInfo:
     json: dict
 
-    @property
+    @cached_property
     def createdTime(self) -> str:
         return self.json.get("createdTime")
 
-    @property
+    @cached_property
     def fansCount(self) -> int:
         return self.json.get("fansCount") or 0
 
-    @property
+    @cached_property
     def isPinned(self) -> bool:
         return self.json.get("pinned") or False
 
-    @property
+    @cached_property
     def monthlyFee(self) -> int:
         return self.json.get("monthlyFee") or 0
 
@@ -50,79 +51,79 @@ class InfluencerInfo:
 class Author:
     json: dict
 
-    @property
+    @cached_property
     def accountMembershipStatus(self) -> int:
         return self.json.get("accountMembershipStatus")
 
-    @property
+    @cached_property
     def comId(self) -> int:
         return self.json.get("ndcId")
 
-    @property
+    @cached_property
     def followersCount(self) -> int:
         return self.json.get("membersCount")
 
-    @property
+    @cached_property
     def followingStatus(self) -> int:
         return self.json.get("followingStatus")
 
-    @property
+    @cached_property
     def icon(self) -> str:
         return self.json.get("icon")
 
-    @property
+    @cached_property
     def id(self) -> str:
         return self.json.get("uid")
 
-    @property
+    @cached_property
     def influencer(self) -> InfluencerInfo:
         return InfluencerInfo(self.json.get("influencerInfo") or {})
 
-    @property
+    @cached_property
     def influencerCreatedTime(self) -> str:
         return self.influencer.createdTime
 
-    @property
+    @cached_property
     def influencerFansCount(self) -> int:
         return self.influencer.fansCount
 
-    @property
+    @cached_property
     def influencerMonthlyFee(self) -> int:
         return self.influencer.monthlyFee
 
-    @property
+    @cached_property
     def isGlobalProfile(self) -> bool:
         return self.json.get("isGlobal")
 
-    @property
+    @cached_property
     def isInfluencerPinned(self) -> bool:
         return self.influencer.isPinned
 
-    @property
+    @cached_property
     def isNicknameVerified(self) -> bool:
         return self.json.get("isNicknameVerified")
 
-    @property
+    @cached_property
     def level(self) -> int:
         return self.json.get("level")
 
-    @property
+    @cached_property
     def membershipStatus(self) -> int:
         return self.json.get("membershipStatus")
 
-    @property
+    @cached_property
     def nickname(self) -> str:
         return self.json.get("nickname")
 
-    @property
+    @cached_property
     def reputation(self) -> int:
         return self.json.get("reputation")
 
-    @property
+    @cached_property
     def role(self) -> int:
         return self.json.get("role")
 
-    @property
+    @cached_property
     def status(self) -> int:
         return self.json.get("status")
 
@@ -131,42 +132,42 @@ class Author:
 class Invitation:
     json: dict
 
-    @property
+    @cached_property
     def author(self) -> Author:
         return Author(self.json.get("author") or {})
 
-    @property
+    @cached_property
     def authorId(self) -> str:
         return self.author.id
 
-    @property
+    @cached_property
     def code(self) -> str:
         return self.json.get("inviteCode")
 
-    @property
+    @cached_property
     def comId(self) -> int:
         return self.json.get("ndcId")
 
-    @property
+    @cached_property
     def duration(self) -> int:
         return self.json.get("duration")
 
-    @property
+    @cached_property
     def createdTime(self) -> str:
         return self.json.get("createdTime")
 
-    @property
+    @cached_property
     def id(self) -> str:
         return self.json.get("invitationId")
 
-    @property
+    @cached_property
     def link(self) -> str:
         return self.json.get("link")
 
-    @property
+    @cached_property
     def modifiedTime(self) -> str:
         return self.json.get("modifiedTime")
 
-    @property
+    @cached_property
     def status(self) -> int:
         return self.json.get("status")

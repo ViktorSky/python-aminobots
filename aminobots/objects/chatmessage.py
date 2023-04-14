@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Optional
 from .userprofile import UserProfile
 
@@ -52,31 +53,31 @@ class AvatarFrame:
     """
     json: dict
 
-    @property
+    @cached_property
     def id(self) -> str:
         return self.json.get('frameId')
 
-    @property
+    @cached_property
     def icon(self) -> str:
         return self.json.get('icon')
 
-    @property
+    @cached_property
     def name(self) -> str:
         return self.json.get('name')
 
-    @property
+    @cached_property
     def status(self) -> int:
         return self.json.get('status')
 
-    @property
+    @cached_property
     def type(self) -> int:
         return self.json.get('frameType')
 
-    @property
+    @cached_property
     def url(self) -> str:
         return self.json.get('resourceUrl')
 
-    @property
+    @cached_property
     def version(self) -> int:
         return self.json.get('version')
 
@@ -111,39 +112,39 @@ class Author:
     """
     json: dict
 
-    @property
+    @cached_property
     def accountMembershipStatus(self) -> int:
         return self.json.get('accountMembershipStatus', 0)
 
-    @property
+    @cached_property
     def avatarFrame(self) -> AvatarFrame:
         return AvatarFrame(self.json.get('avatarFrame') or dict())
 
-    @property
+    @cached_property
     def icon(self) -> str:
         return self.json.get('icon')
 
-    @property
+    @cached_property
     def id(self) -> str:
         return self.json.get('uid')
 
-    @property
+    @cached_property
     def level(self) -> int:
         return self.json.get('level')
 
-    @property
+    @cached_property
     def nickname(self) -> str:
         return self.json.get('nickname', 0)
 
-    @property
+    @cached_property
     def reputation(self) -> int:
         return self.json.get('reputation', 0)
 
-    @property
+    @cached_property
     def role(self) -> int:
         return self.json.get('role')
 
-    @property
+    @cached_property
     def status(self) -> int:
         return self.json.get('status')
 
@@ -182,62 +183,62 @@ class StickerCollection:
     """
     json: dict
 
-    @property
+    @cached_property
     def authorId(self) -> str:
         """User id."""
         return self.json.get('uid')
 
-    @property
+    @cached_property
     def banner(self) -> str:
         """Banner url."""
         return self.json.get('bannerUrl')
 
-    @property
+    @cached_property
     def createdTime(self) -> str:
         """Created date."""
         return self.json.get('createdTime')
 
-    @property
+    @cached_property
     def icon(self) -> str:
         """Collection icon url."""
         return self.json.get('icon')
 
-    @property
+    @cached_property
     def id(self) -> str:
         """Collection id."""
         return self.json.get('collectionId')
 
-    @property
+    @cached_property
     def modifiedTime(self) -> str:
         """Modified date."""
         return self.json.get('modifiedTime')
 
-    @property
+    @cached_property
     def name(self) -> str:
         """Collection name."""
         return self.json.get('name')
 
-    @property
+    @cached_property
     def smallIcon(self) -> str:
         """Small collection icon url."""
         return self.json.get('smallIcon')
 
-    @property
+    @cached_property
     def status(self) -> int:
         """Collection status."""
         return self.json.get('status')
 
-    @property
+    @cached_property
     def stickersCount(self) -> int:
         """Stickers count."""
         return self.json.get('stickersCount')
 
-    @property
+    @cached_property
     def type(self) -> int:
         """Collection type."""
         return self.json.get('collectionType')
 
-    @property
+    @cached_property
     def usedCount(self) -> int:
         """Used count."""
         return self.json.get('usedCount')
@@ -277,55 +278,55 @@ class Sticker:
     """
     json: dict
 
-    @property
+    @cached_property
     def collection(self) -> StickerCollection:
         return StickerCollection(self.json.get('stickerCollectionSummary' or dict()))
 
-    @property
+    @cached_property
     def collectionId(self) -> str:
         return self.json.get('stickerCollectionId')
 
-    @property
+    @cached_property
     def createdTime(self) -> str:
         return self.json.get('createdTime')
 
-    @property
+    @cached_property
     def icon(self) -> str:
         return self.json.get('icon')
 
-    @property
+    @cached_property
     def iconV2(self) -> str:
         return self.json.get('iconV2')
 
-    @property
+    @cached_property
     def id(self) -> str:
         return self.json.get('stickerId')
 
-    @property
+    @cached_property
     def mediumIcon(self) -> str:
         return self.json.get('mediumIcon')
 
-    @property
+    @cached_property
     def mediumIconV2(self) -> str:
         return self.json.get('mediumIconV2')
 
-    @property
+    @cached_property
     def name(self) -> str:
         return self.json.ge('name')
 
-    @property
+    @cached_property
     def smallIcon(self) -> str:
         return self.json.get('smallIcon')
 
-    @property
+    @cached_property
     def smallIconV2(self) -> str:
         return self.json.get('smallIconV2')
 
-    @property
+    @cached_property
     def status(self) -> int:
         return self.json.get('status')
 
-    @property
+    @cached_property
     def usedCount(self) -> int:
         return self.json.get('usedCount')
 
@@ -348,15 +349,15 @@ class Extensions:
     """
     json: dict
 
-    @property
+    @cached_property
     def duration(self) -> Optional[float]:
         return self.json.get('duration')
 
-    @property
+    @cached_property
     def originalStickerId(self) -> Optional[str]:
         return self.json.get('originalStickerId')
 
-    @property
+    @cached_property
     def sticker(self) -> Sticker:
         return Sticker(self.json.get('sticker') or dict())
 
@@ -401,77 +402,77 @@ class ChatMessage:
     """
     json: dict
 
-    @property
+    @cached_property
     def author(self) -> UserProfile:
         """User profile."""
         return UserProfile(self.json.get('author') or dict())
 
-    @property
+    @cached_property
     def authorId(self) -> str:
         """User id."""
         return self.json.get('uid')
 
-    @property
+    @cached_property
     def chatId(self) -> str:
         """Chat id."""
         return self.json.get('threadId')
 
-    @property
+    @cached_property
     def clientRefId(self) -> int:
         """Ref id."""
         return self.json.get('clientRefId')
 
-    @property
+    @cached_property
     def content(self) -> Optional[str]:
         """Text message."""
         return self.json.get('content')
 
-    @property
+    @cached_property
     def createdTime(self) -> str:
         """Create date."""
         return self.json.get('createdTime')
 
-    @property
+    @cached_property
     def extensions(self) -> Extensions:
         """Message extensions."""
         return Extensions(self.json.get('extensions') or dict())
 
-    @property
+    @cached_property
     def id(self) -> str:
         """Message id."""
         return self.json.get('messageId')
 
-    @property
+    @cached_property
     def includedInSummary(self) -> bool:
         """Included in summary."""
         return self.json.get('includedInSummary')
 
-    @property
+    @cached_property
     def isHidden(self) -> bool:
         """Is hidden message"""
         return self.json.get('isHidden')
 
-    @property
+    @cached_property
     def media(self) -> Optional[str]:
         """Media url."""
         return self.json.get('mediaValue')
 
-    @property
+    @cached_property
     def mediaDuration(self) -> Optional[float]:
         """Audio duration."""
         return self.extensions.duration
 
-    @property
+    @cached_property
     def mediaType(self) -> int:
         """Media type."""
         return self.json.get('mediaType') or 0
 
-    @property
+    @cached_property
     def sticker(self) -> Sticker:
         """Sticker object."""
         return self.extensions.sticker
 
-    @property
+    @cached_property
     def type(self) -> int:
         """Message type."""
         return self.json.get('type')
