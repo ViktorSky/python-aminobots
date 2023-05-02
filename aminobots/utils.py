@@ -20,15 +20,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
+from dataclasses import dataclass, field
+from typing_extensions import Self
 from typing import (
     Any,
     Callable,
     Dict,
+    Iterator,
     List,
     Optional,
     Final,
-    Union,
+    Sequence,
+    Tuple,
+    Union
 )
 from collections.abc import Sequence
 from hashlib import sha1
@@ -41,12 +45,18 @@ import time
 import re
 import os
 
+from . import enums
+
+
 __all__ = (
     'active_time',
     'copy_doc',
     'copy_all_docs',
     'Date',
     'Device',
+    'device_gen',
+    'Media',
+    'MediaList',
     'MISSING',
     'SID',
     'signature',
@@ -164,34 +174,38 @@ class Date(str):
 
 
 class Device(str):
-    """Represent Amino Device
+    """Represents an Amino Device
 
     Parameters
     ----------
-    device: :class:`Optional[str]`
+    device : :class:`str` | `None`
         Amino device.
 
     """
-    def __new__(cls, device: Optional[str] = None):
+    def __new__(cls, device: Optional[str] = None) -> Self:
         if device is None:
-            device = cls.from_id(os.urandom(20))
+            device = device_gen()
         elif isinstance(device, str):
-            device = cls.from_id(bytes.fromhex(device)[1:21])
+            device = update_device(device)
         return str.__new__(cls, device.upper())
-
-    @classmethod
-    def from_id(cls, id: bytes) -> str:
-        info: bytes = bytes.fromhex(PREFIX) + id
-        device: bytes = info + hmac.new(
-            bytes.fromhex(DEVKEY),
-            info, sha1
-        ).digest()
-        return device.hex()
 
     @cached_property
     def id(self) -> bytes:
-        """device identifier"""
+        """device identifier."""
         return bytes.fromhex(self)[1:21]
+
+
+def device_gen(id: bytes = None) -> str:
+    info: bytes = bytes.fromhex(PREFIX) + (id or os.urandom(20))
+    device: bytes = info + hmac.new(
+        bytes.fromhex(DEVKEY),
+        info, sha1
+    ).digest()
+    return device.hex()
+
+
+def update_device(device: Union[str, Device]) -> str:
+    return device_gen(bytes.fromhex(device)[1:21])
 
 
 class SID(str):
@@ -318,7 +332,7 @@ def copy_doc(doc: Union[Callable, str]) -> Callable:
         return obj
     return decorator
 
-def copy_all_docs(cls: type) -> type:
+def copy_all_docs(cls):
     """Decorator that copies docstrings from an abstract base class to a concrete class.
 
     This decorator copies the docstrings of all methods and properties from the
@@ -363,3 +377,124 @@ def active_time(seconds=0, minutes=0, hours=0) -> List[Dict[str, int]]:
             'end': int(time.time() + total % 300)
         }
     ]
+
+
+
+
+@dataclass(unsafe_hash=True, frozen=True, slots=True)
+class Link:
+    """Represents a link for the content of posts, chat messages, etc.
+
+    Examples
+    --------
+    ```
+    >>> content = "Hello!, see your {}.".format(Link('ndc://user-me', 'profile'))
+    >>> content
+    'Hello!, see your [ndc://user-me|profile].'
+    >>> blog = await amino.post_blog(communityId, input('Blog Title:'), content)
+    ```
+
+    Parameters
+    ----------
+    url : :class:`str`
+        The link. (amino, ndc, external)
+    alias : :class:`str` | `None`
+        The alias link.
+
+    """
+    url: str = field(hash=True)
+    alias: Optional[str] = field(default=None, hash=True)
+
+    def __str__(self) -> str:
+        return f'[{self.url}|{self.alias}]' if self.alias else self.url
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.url, str):
+            raise TypeError('url argument must be a string, not %r.' % type(self.url).__name__)
+        elif not isinstance(self.alias, Optional[str]):
+            raise TypeError('alias argument must be a string, not %r.' % type(self.alias).__name__)
+
+
+@dataclass(unsafe_hash=True, frozen=True, slots=True)
+class Media:
+    """Represents a media upload for user bio, content of posts, etc.
+
+    Examples
+    --------
+    ```
+    >>> my_frame: Media = Media(MediaType.IMAGE, icon)
+    >>> medias: MediaList = amino.user.medias
+    >>> await amino.edit_profile(medias=MediaList(*medias, my_frame))
+    ```
+
+    """
+    type: enums.MediaType = field(hash=False)
+    url: str = field(hash=True)
+    caption: Optional[str] = field(default=None, hash=True)
+    id: Optional[str] = field(default=None, hash=True)
+
+    def __str__(self) -> str:
+        return f"[IMG={self.id}]" if self.id else self.url
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.url, str):
+            raise TypeError('url argument must be a string, not %r.' % type(self.url).__name__)
+        elif not isinstance(self.caption, Optional[str]):
+            raise TypeError('caption argument must be a string, not %r.' % type(self.alias).__name__)
+        elif not isinstance(self.type, enums.MediaType):
+            raise TypeError('type argument must be a MediaType object not %r.' % type(self.type).__name__)
+        elif self.type not in (enums.MediaType.IMAGE, enums.MediaType.YOUTUBE):
+            raise ValueError('type argument must be IMAGE or YOUTUBE, not %r.' % self.type.name)
+        elif not isinstance(self.id, Optional[str]):
+            raise TypeError('id argument must be a string not %r.' % type(self.id).__name__)
+        elif isinstance(self.id, str):
+            if len(self.id) != 3:
+                raise ValueError('id argument must contain 3 characters, not %d.' % len(self.id))
+            elif any(filter(lambda c: not (c.isalpha() and c.isupper()), self.id)):
+                raise ValueError('id argument must have only uppercase ascii alphabetic characters.')
+
+    @property
+    def json(self) -> Tuple[int, str, Optional[str], Optional[str]]:
+        return [
+            self.type.value,
+            self.url,
+            self.caption,
+            self.id
+        ]
+
+
+@dataclass(init=False, unsafe_hash=True)
+class MediaList:
+    args: Tuple[Media, ...] = field(hash=True)
+
+    def __init__(self, *args: Media) -> None:
+        unmatch = tuple(filter(lambda m: not isinstance(m, Media), args))
+        if unmatch:
+            raise ValueError('expected Media object, not %r.' % type(unmatch[0]).__name__)
+        self.args = args
+
+    def __iter__(self) -> Iterator[Media]:
+        return iter(self.args)
+
+    def __len__(self) -> int:
+        return len(self.args)
+
+    @property
+    def json(self) -> List[Tuple[int, str, Optional[str], Optional[str]]]:
+        return [m.json for m in self.args]
+
+    @property
+    def types(self) -> List[enums.MediaType]:
+        return [m.type for m in self.args]
+
+    @property
+    def urls(self) -> List[str]:
+        return [m.url for m in self.args]
+
+    @property
+    def captions(self) -> List[str]:
+        return [m.caption for m in self.args]
+
+    @property
+    def ids(self) -> List[str]:
+        return [m.id for m in self.args]

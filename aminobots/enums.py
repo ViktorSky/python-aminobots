@@ -20,11 +20,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import enum
 
 __all__ = (
     'Action',
     'AdsLevel',
     'AlertEvent',
+    'ChannelJoinType',
+    'ChannelType',
     'ClientType',
     'ChatEvent',
     'ChatType',
@@ -34,100 +37,89 @@ __all__ = (
     'Encoding',
     'Event',
     'EventType',
+    'FilterType',
     'Gender',
     'Language',
-    'Media',
+    'MediaType',
     'MessageType',
     'Notice',
     'NoticeAction',
     'NoticePenaltyType',
     'NoticeStatus',
+    'NoticeType',
     'ObjectType',
     'PaymentType',
     'Role',
-    'ValidationTarget',
+    'UserType',
+    'ValidationType',
+    'ValidationLevel',
     'VerifyType'
 )
-
-import enum
 # AuthType
 
-
 class Enum(enum.Enum):
-    def __str__(self):
-        """return str(self)"""
-        return str(self.value)
-
-    def __int__(self) -> int:
-        """return int(self)"""
-        return int(self.value)
-
     def __eq__(self, other) -> bool:
-        """return self == other"""
+        """this == other"""
         if isinstance(other, enum.Enum):
             return self.value == other.value
         else:
             return self.value == other
 
     def __ne__(self, other):
-        """return self != other"""
+        """this != other"""
         if isinstance(other, enum.Enum):
             return self.value != other.value
         else:
             return self.value != other
 
     def __le__(self, other) -> bool:
-        """return self <= other"""
+        """this <= other"""
         if isinstance(other, enum.Enum):
             return self.value <= other.value
         else:
             return self.value <= other
 
     def __lt__(self, other) -> bool:
-        """return self < other"""
+        """this < other"""
         if isinstance(other, enum.Enum):
             return self.value < other.value
         else:
             return self.value < other
 
     def __ge__(self, other) -> bool:
-        """return self >= other"""
+        """this >= other"""
         if isinstance(other, enum.Enum):
             return self.value >= other.value
         else:
             return self.value >= other
 
     def __gt__(self, other):
-        """return self > other"""
+        """this > other"""
         if isinstance(other, enum.Enum):
             return self.value > other.value
         else:
             return self.value > other
 
     def __add__(self, other):
-        """return self + other"""
+        """this + other"""
         if isinstance(other, enum.Enum):
             return self.value + other.value
         else:
             return self.value + other
 
     def __and__(self, other):
-        """return self & other"""
+        """this & other"""
         if isinstance(other, enum.Enum):
             return self.value and other.value
         else:
             return self.value and other
 
     def __or__(self, other):
-        """return self | other"""
+        """this | other"""
         if isinstance(other, enum.Enum):
             return self.value or other.value
         else:
             return self.value or other
-
-    def __float__(self) -> float:
-        """return float(self)"""
-        return float(self.value)
 
 
 class Action(Enum):
@@ -139,6 +131,19 @@ class AdsLevel(Enum):
     LEVEL_0 = 0
     LEVEL_1 = 1
     LEVEL_2 = 2
+
+
+class ChannelJoinType(Enum):
+    OPEN = 1
+    APPROVAL_REQUIRED = 2
+    INVITE_ONLY = 3
+
+
+class ChannelType(Enum):
+    TEXT = 0
+    VOICE = 1
+    LIVE_STREAM = 4
+    SCREENING_ROOM = 5
 
 
 class ClientType(Enum):
@@ -155,13 +160,13 @@ class CommentSort(Enum):
 
 
 class Connection(Enum):
-    CLOSE: str = "Close"
-    KEEP_ALIVE: str = "Keep-Alive"
-    UPGRADE: str = "Upgrade"
+    CLOSE = "Close"
+    KEEP_ALIVE = "Keep-Alive"
+    UPGRADE = "Upgrade"
 
 
 class ChatType(Enum):
-    PM = 0
+    DM = 0
     PRIVATE = 1
     PUBLIC = 2
 
@@ -199,7 +204,19 @@ class Encoding(Enum):
 
 
 class AlertEvent(Enum):
-    pass
+    ...
+
+
+class ChannelEvent(Enum):
+    FETCH = "fetch-channel"
+
+
+class TopicEvent(Enum):
+    ONLINE = "online-members"
+    TYPING_START = "users-start-typing-at"
+    TYPING_END = "users-end-typing-at"
+    RECORDING_START = "users-start-recording-at"
+    RECORDING_END = "users-end-recording-at"
 
 
 class ChatEvent(Enum):
@@ -235,7 +252,6 @@ class ChatEvent(Enum):
 
     JOIN_CHAT                   = "1000:101:0"
     LEAVE_CHAT                  = "1000:102:0"
-
     START_CHAT                  = "1000:103:0"  # PM, PUBLIC, PRIVATE
 
     CHAT_TIP                    = "1000:120:0"
@@ -247,19 +263,30 @@ class ChatEvent(Enum):
 
 class Event(Enum):
     ALERT   = AlertEvent
+    CHANNEL = ChannelEvent
+    TOPIC   = TopicEvent
     CHAT    = ChatEvent
 
 
 class EventType(Enum):
-    ALERT   = 10
-    CHAT    = 1000
+    ALERT = 10
+    CHANNEL = 201
+    TOPIC = 400
+    CHAT = 1000
+
+
+class FilterType(Enum):
+    RECOMMENDED = 'recommended'
+    NEWEST = 'newest'
+    #ONLINE = 'online'
+    JOINED = 'joined-me'
 
 
 class Gender(Enum):
-    UNKNOWN     = 0
-    MALE        = 1
-    FEMALE      = 2
-    NON_BINARY  = 255
+    UNKNOWN = 0
+    MALE = 1
+    FEMALE = 2
+    NON_BINARY = 255
 
 
 class Language(Enum):
@@ -304,13 +331,14 @@ class Language(Enum):
     TURKISH                 = 'tr'      # Türkçe
     UKRAINIAN               = 'uk'      # Українська
     VIETNAMESE              = 'vi'      # Tiếng Việt
+    ALL                     = 'all'
 
 
-class Media(Enum):
-    TEXT    = 0
-    IMAGE   = 100
+class MediaType(Enum):
+    TEXT = 0
+    IMAGE = 100
     YOUTUBE = 103
-    AUDIO   = 110
+    AUDIO = 110
     STICKER = 113
 
 
@@ -388,6 +416,10 @@ class NoticeStatus(Enum):
     DECLINED    = 3
 
 
+class NoticeType(Enum):
+    USERS = 'usersV2'
+
+
 class ObjectType(Enum):
     USER                = 0
     BLOG = QUIZ         = 1
@@ -430,32 +462,55 @@ class ObjectType(Enum):
 
 
 class PaymentType(Enum):
-    COIN                    = 1
-    IOS_PURCHASE            = 2
-    IOS_SUBSCRIPTION        = 3
-    ANDROID_PURCHASE        = 4
-    ANDROID_SUBSCRIPTION    = 5
+    COIN = 1
+    IOS_PURCHASE = 2
+    IOS_SUBSCRIPTION = 3
+    ANDROID_PURCHASE = 4
+    ANDROID_SUBSCRIPTION = 5
 
 
 class Role(Enum):
-    MEMBER      = 0
-    LEADER      = 100
-    CURATOR     = 101
-    USER_AGENT  = 102
+    MEMBER = 0
+    LEADER = 100
+    CURATOR = 101
+    AGENT = 102
 
 
-class ValidationTarget(Enum):
-    DIGITS      = 3
-    EMAIL       = 1
-    GLOBAL_SMS  = 8
+class SourceType(Enum):
+    PURCHASE = 1
+    LUCKY_DRAW = 6
+    ADS = 9
+    PROPS_GIVEN = 12
+    PROPS = 13
+    FAN_CLUB_SUBSCRIPTION = 15
+    FAN_CLUB = 16
+
+
+class UserType(Enum):
+    BANNED = 'banned'
+    RECENT = 'recent'
+    FEATURED = 'featured'
+    LEADER = 'leaders'
+    CURATOR = 'curators'
+
+
+class ValidationType(Enum):
+    EMAIL = 1
+    DIGITS = 3
+    GLOBAL_SMS = 8
+
+
+class ValidationLevel(Enum):
+    IDENTITY = 1 # email & phoneNumber
+    SECRET = 2 # password
 
 
 class VerifyType(Enum):
-    RESET_PASSWORD      = 1
-    FORGOT_PASSWORD     = 2
-    CHANGE_PASSWORD     = 3
-    SIGNUP              = 4
-    ADD_IDENTITY        = 5
-    UPDATE_IDENTITY     = 6
+    RESET_PASSWORD = 1
+    FORGOT_PASSWORD = 2
+    CHANGE_PASSWORD = 3
+    SIGNUP = 4
+    ADD_IDENTITY = 5
+    UPDATE_IDENTITY = 6
     VERIFY_NEW_IDENTITY = 7
-    DELETE_ACCOUNT      = 8
+    DELETE_ACCOUNT = 8

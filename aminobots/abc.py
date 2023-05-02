@@ -20,20 +20,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
 from dataclasses import dataclass
 from typing import (
     Any,
     ClassVar,
-    Iterable,
     Optional,
     Protocol,
-    runtime_checkable,
-    Type,
-    Union
+    Union,
+    runtime_checkable
 )
-from yarl import URL
 import logging
+import yarl
+from . import enums
 
 __all__ = (
     'ABCAmino',
@@ -43,6 +41,7 @@ __all__ = (
     'ABCWSClient',
     'Object',
 )
+
 
 @runtime_checkable
 @dataclass(repr=False)
@@ -55,12 +54,17 @@ class ABCAmino(Protocol):
     __slots__ = ()
 
     logger: logging.Logger
-    http: Type['ABCHTTPClient']
-    rtc: Type['ABCRTCClient']
-    ws: Type['ABCWSClient']
+    http: 'ABCHTTPClient'
+    rtc: 'ABCRTCClient'
+    ws: 'ABCWSClient'
 
-    async def get_from_link(self, link: str) -> Object:
+    async def get_from_link(self, link: str, /) -> Object:
         """Request link data.
+
+        Parameters
+        ----------
+        link : :class:`str`
+            Http amino url.
     
         Examples
         --------
@@ -71,16 +75,27 @@ class ABCAmino(Protocol):
         ['api:duration', 'api:message', 'linkInfoV2', 'api:timestamp', 'api:statuscode']
         ```
 
+        """
+        raise NotImplementedError
+
+    async def get_from_device(self, device: str, /) -> Object:
+        """Get auid (user-id) from device.
+
         Parameters
         ----------
-        link: :class:`str`
-            Http amino url.
+        device : :class:`str` | :class:`Device`
+            The user device.
 
         """
         raise NotImplementedError
 
-    async def get_link_info(self, link: str) -> Object:
+    async def get_link_info(self, link: str, /) -> Object:
         """Request link info. (only community links)
+
+        Parameters
+        ----------
+        link : :class:`str`
+            Http amino url.
 
         Examples
         --------
@@ -89,61 +104,261 @@ class ABCAmino(Protocol):
         >>> r = await amino.get_link_info(link)
         ```
 
-        Parameters
-        ----------
-        link: :class:`str`
-            Http amino url.
-
         """
         raise NotImplementedError
 
-    async def get_user_info(self, id: str, *, cid: Optional[int] = ...) -> Object:
-        """Request user profile.
+    async def get_ads_info(self) -> Object:
+        """Get account coins earned by ads.
 
         Examples
         --------
         ```
-        >>> info = await amino.get_from_link(user_link)
-        >>> user = await amino.get_user_info(info.id)
+        >>> ads = await amino.get_ads_info()
+        >>> print(ads.coinsEarned.weekly)
         ```
+
+        """
+        raise NotImplementedError
+
+    async def get_user_info(self, id: str, /, cid: Optional[int] = ...) -> Object:
+        """Request user profile.
 
         Parameters
         ----------
-        id: :class:`str`
+        id : :class:`str`
             User id.
-        cid: :class:`Optional[int]`
+        cid : :class:`int` | `None`
             Community id.
+
+        Examples
+        --------
+        ```
+        >>> user_link = input('user-link:')
+        >>> info = await amino.get_from_link(user_link)
+        >>> user = await amino.get_user_info(info.id)
+        >>> print('nickname:', user.nickname)
+        ```
 
         """
         raise NotImplementedError
 
     async def get_account_info(self) -> Object:
         """Request account info.
-    
+
+        Requirements
+        ------------
+        - Login
+
         Examples
         --------
         ```
-        >>> account = await amino.get_account_info()
-        >>> print(account.email)
+        >>> info = await amino.get_account_info()
+        >>> print(info.account.email)
         ```
 
+        """
+        raise NotImplementedError
+
+    async def get_chat_info(self, id: str, /, cid: Optional[int] = ...) -> Object:
+        """Get chat thread info.
+
+        Parameters
+        ----------
+        id : :class:`str`
+            Chat thread id.
+        cid : :class:`int` | `None`
+            Community id.
+
+        """
+        raise NotImplementedError
+
+    async def get_chat_members(self, id: str, /, start: int = ..., size: int = ..., cid: Optional[int] = ...) -> Object:
+        """Get members profiles in chat.
+
+        Parameters
+        ----------
+        id : :class:`str`
+            Chat thread id.
+        start : :class:`int`
+            Start index.
+        size : :class:`int`
+            Size of list of users. Max size is 100.
+        cid : :class:`int` | `None`
+            Community id.
         """
         raise NotImplementedError
 
     async def get_community_info(self, id: int, /) -> Object:
         """Request Community info.
 
+        Parameters
+        ----------
+        id : :class:`int`
+            Community id.
+
         Examples
         --------
         ```
-        >>> cid = await amino.get_from_link(input('community-link: '))
-        >>> cm_info = await amino.get_community_info(cid.id)
+        >>> community_link = input('community-link: ')
+        >>> cid = await amino.get_from_link(community_link)
+        >>> info = await amino.get_community_info(cid.id)
+        >>> print('community name:', info.community.name)
         ```
+
+        """
+        raise NotImplementedError
+
+    async def get_community_trending(self, cid: int, /) -> Object:
+        """Get trending of community.
 
         Parameters
         ----------
-        id: :class:`int`
+        cid : :class:`int`
             Community id.
+
+        Examples
+        --------
+        ```
+        >>> trending = await amino.get_community_trending(communityId)
+        ```
+
+        """
+        raise NotImplementedError
+
+    async def get_wallet_info(self) -> Object:
+        """Get account wallet.
+
+        Requirements
+        ------------
+        - Login
+
+        Examples
+        --------
+        ```
+        >>> info = await amino.get_wallet_info()
+        >>> print(info.wallet.totalCoins)
+        ```
+
+        """
+        raise NotImplementedError
+
+    async def get_wallet_history(self, start: int = ..., size: int = ...) -> Object:
+        """Get account coin history.
+
+        Requirements
+        ------------
+        - Login
+
+        Parameters
+        ----------
+        start : :class:`int`
+            The history index.
+        size : :class:`int`
+            The size of the history list. (max is 100)
+
+        """
+        raise NotImplementedError
+
+    async def get_account_push_settings(self) -> Object:
+        """Get account global push settings.
+
+        Requirements
+        ------------
+        - Login
+
+        Examples
+        --------
+        ```
+        >>> push = await amino.get_account_push_settings()
+        >>> print(push.settings.communityIds)
+        ```
+
+        """
+        raise NotImplementedError
+
+    async def get_push_settings(self, cid: int = ...) -> Object:
+        """Get global/community push settings.
+
+        Requirements
+        ------------
+        - Login
+
+        Parameters
+        ----------
+        cid : :class:`int`
+            The community id.
+
+        """
+        raise NotImplementedError
+
+    async def set_push_settings(self, activities: bool, broadcasts: bool, cid: int = ...) -> Object:
+        """Update the global/community push settings.
+
+        Requirements
+        ------------
+        - Login
+
+        Parameters
+        ----------
+        activities : :class:`bool`
+            Enable members activities notifications.
+        broadcasts : :class:`bool`
+            Enable leaders broadcasts notifications.
+        cid : :class:`int`
+            The community id.
+
+        Examples
+        --------
+        ```
+        >>> await amino.set_push_settings(False, True, communityId)
+        ```
+
+        """
+        raise NotImplementedError
+
+    async def get_membership_info(self) -> Object:
+        """Get account membership info.
+
+        Requirements
+        ------------
+        - Login
+
+        Examples
+        --------
+        ```
+        >>> info = await amino.get_membership_info()
+        >>> print(info.enabled)
+        ```
+
+        """
+        raise NotImplementedError
+
+    async def joined_chats(self, cid: int, start: int = ..., size: int = ...) -> Object:
+        """Get global/community joined chats.
+
+        Parameters
+        ----------
+        cid : :class:`int`
+            Comminity id.
+        start : :class:`int`
+            Start index.
+        size : :class:`int`
+            Size of the list. Max size is 100.
+
+        """
+        raise NotImplementedError
+
+    async def configure_membership(self, autoRenew: bool) -> Object:
+        """Update the account membership.
+
+        Requirements
+        ------------
+        - Login
+
+        Parameters
+        ----------
+        autoRenew : :class:`bool`
+            Auto renew the membership.
 
         """
         raise NotImplementedError
@@ -153,21 +368,101 @@ class ABCAmino(Protocol):
 
         Parameters
         ----------
-        start: int
-            start index.
-        size: int
-            size of the list. Max size is 100.
+        start : :class:`int`
+            Start index.
+        size : :class:`int`
+            Size of the list. Max size is 100.
+
+        Examples
+        --------
+        ```
+        >>> await amino.joined_communities()
+        ```
 
         """
         raise NotImplementedError
 
-    async def get_vip_users(self, cid: int) -> Object:
+    async def get_vip_users(self, cid: int, /) -> Object:
         """Get community influencers (vip users)
 
         Parameters
         ----------
-        cid: :class:`int`
+        cid : :class:`int`
             Community id.
+
+        """
+        raise NotImplementedError
+
+    async def search_user(self, q: str, /, cid: Optional[int] = ...) -> Object:
+        """Search user. Match amino id or nickname.
+
+        Parameters
+        ----------
+        q : :class:`str`
+            Query string.
+        cid : :class:`int` | `None`
+            Community id.
+
+        """
+        raise NotImplementedError
+
+    async def search_community(self, q: str, /, language: str = ...) -> Object:
+        """Search community. Match amino-id, name.
+
+        Parameters
+        ----------
+        q : :class:`str`
+            Query string.
+        language : :class:`Language`
+            Search language filter.
+
+        """
+        raise NotImplementedError
+
+    async def search_chat(self, q: str, /, cid: Optional[int] = ...) -> Object:
+        """Search global/community chat.
+
+        Parameters
+        ----------
+        q : :class:`str`
+            Chat title, search key.
+        cid : :class:`int`
+            Community id.
+
+        """
+        raise NotImplementedError
+
+    async def search_quiz(self, q: str, /, cid: Optional[int] = ...) -> Object:
+        """Search quiz posts.
+
+        Parameters
+        ----------
+        q : :class:`str`
+            Quiz title, search key.
+        cid : :class:`int` | `None`
+            Community id.
+
+        """
+        raise NotImplementedError
+
+    async def verify_password(self, password: str = ..., secret: str = ...) -> Object:
+        """Verify the account password.
+
+        Parameters
+        ----------
+        password : :class:`str` | `None`
+            The account password.
+        secret : :class:`str` | `None`
+            The account encoded secret password.
+
+        Examples
+        --------
+        ```
+        >>> await amino.login_sid(os.environ['sid'])
+        >>> check = await amino.verify_password('my-password')
+        >>> check.api.message
+        'OK.'
+        ```
 
         """
         raise NotImplementedError
@@ -180,26 +475,22 @@ class ABCAmino(Protocol):
     ) -> Object:
         """Login in one account.
 
-        Examples
-        --------
-        >>> amino.login(email='example@example.com', password='null-password')
-        <aminobots.models.Login object at 0x000001BB8BAE9640>
-
         Parameters
         ----------
-        email: :class:`str`
+        email : :class:`str`
             Email of the amino account.
-        password: Optional[:class:`str`]
-            Password of the amino account. (default is None)
-        phone: :class:`str`
-            Phone number of the amino account. (default is None)
-        secret: Optional[:class:`str`]
-            Secret password encoded of the amino account. (default is None)
+        password : :class:`str` | `None`
+            Password of the amino account.
+        secret : :class:`str` | `None`
+            Secret password encoded of the amino account.
 
-        Returns
-        -------
-        aminobots.objects.Login:
-            An object organize api response
+        Examples
+        --------
+        ```
+        >>> log = await amino.login(email='example@example.com', password='null-password')
+        >>> log.account.email
+        'example@example.com'
+        ```
 
         """
         raise NotImplementedError
@@ -212,18 +503,21 @@ class ABCAmino(Protocol):
     ) -> Object:
         """Login in one account.
 
+        Parameters
+        ----------
+        phone : :class:`str`
+            Phone number of the amino account.
+        password : :class:`str` | `None`
+            Password of the amino account.
+        secret : :class:`str` | `None`
+            Secret password encoded of the amino account.
+
         Examples
         --------
         ```
-        >>> amino.login_phone('+595 983772712', 'null-password')
-        <aminobots.models.Login object at 0x000002D0A50AC500>
+        >>> amino.login_phone('+1 234234235', 'null-password')
+        >>> print('my email is:', amino.account.email)
         ```
-
-        Parameters
-        ----------
-        phone
-        password
-        secret
 
         """
         raise NotImplementedError
@@ -251,7 +545,7 @@ class ABCRTCClient(Protocol):
 class ABCHTTPClient(Protocol):
     __slots__ = ()
 
-    BASE: ClassVar[URL] = URL('https://service.narvii.com/api/v1/')
+    BASE: ClassVar[yarl.URL] = yarl.URL('https://service.narvii.com/api/v1/')
 
     async def headers(
         self,
@@ -260,24 +554,24 @@ class ABCHTTPClient(Protocol):
     ) -> dict:
         """Prepare the request header.
 
-        Examples
-        --------
-        ```
-        >>> data: str = ujson.dumps({})
-        >>> headers: dict = await amino.prepare_headers(data=data)
-        ```
-
         Parameters
         ---------
-        data: :class:`Optional[str]`
+        data : :class:`str` | `None`
             The http body string.
-        content_type: :class:`Optional[str]`
+        content_type : :class:`str` | `None`
             Content-Type value of header.
 
         Returns
         -------
-        dict:
+        dict
             The full http headers.
+
+        Examples
+        --------
+        ```
+        >>> data: str = ujson.dumps({})
+        >>> headers: dict = await amino.prepare_headers(data)
+        ```
 
         """
         raise NotImplementedError
@@ -295,39 +589,39 @@ class ABCHTTPClient(Protocol):
     ) -> dict:
         """Make a request to the amino api.
 
-        Examples
-        -------
-        ```python
-        >>> r: dict = await amino.request('GET', 'user-profile/', params=dict(size=5))
-        ```
-
         Parameters
         ----------
-        method: :class:`str`
+        method : :class:`str`
             HTTP method.
-        url: :class:`str`
+        url : :class:`str`
             Resource path.
-        params: :class:`Optional[dict]`
+        params : :class:`dict` | `None`
             Request parameters. Only for get method.
-        json: :class:`Optional[dict]`
+        json : :class:`dict` | `None`
             The data for the request. Only for post method.
-        cid: :class:`Optional[int]`
+        cid : :class:`int` | `None`
             Community id.
-        scopeCid: :class:`int`
+        scopeCid : :class:`int`
             Scope community id.
-        minify: :class:`bool`
+        minify : :class:`bool`
             Data to json_minify.
 
         Raises
         ------
-        APIError:
+        APIError
             Raise when the api response status is not `0`.
-        ClientError:
+        ClientError
             Raise when the request status <= `400`.
-        ServerError:
+        ServerError
             Raise when the request status <= `500`.
-        Forbidden:
+        Forbidden
             Raise when `403` http error eccurs.
+
+        Examples
+        -------
+        ```
+        >>> r: dict = await amino.request('GET', 'user-profile', params=dict(size=5))
+        ```
 
         """
         raise NotImplementedError
@@ -341,29 +635,27 @@ class ABCHTTPClient(Protocol):
     ) -> dict:
         """Make a GET request to the amino api.
 
+        Parameters
+        ----------
+        url : :class:`str`
+            The resource path.
+        params : :class:`dict` | `None`
+            Parameters of the request.
+
+        Raises
+        ------
+        HTTPException
+            Raise when api response is not `0`.
+        Forbidden
+            If `403` error eccurs.
+
         Examples
         --------
         ```
         >>> r: dict = await amino.get('user-profile', dict(size=5))
-        >>> print(r.get('api:message'))
+        >>> r.get('api:message')
+        'OK.'
         ```
-
-        Parameters
-        ----------
-        url: :class:`str`
-            The resource path.
-        params: :class:`Optional[dict]`
-            Parameters of the request.
-        kwargs: :class:`dict[str, Any]`
-            cid: :class:`int`
-            isglobal: :class:`bool`
-
-        Raises
-        ------
-        HTTPException:
-            Raise when api response is not :class:`0`.
-        Forbidden:
-            If 403 error eccurs.
 
         """
         raise NotImplementedError
@@ -379,71 +671,54 @@ class ABCHTTPClient(Protocol):
 
         Parameters
         ----------
-        url: :class:`str`
+        url : :class:`str`
             The resource path.
-        json: :class:`dict`
+        json : :class:`dict`
             Dict data to send.
-        kwargs: :class:`Dict[str, Any]`
-            cid: :class:`int`
-            isglobal: :class:`bool`
-            minify: :class:`bool`
-
         Raises
         ------
-        HTTPException:
-            Raise when api response is not :class:`0`.
-        Forbidden:
-            If 403 error eccurs.
+        HTTPException
+            Raise when api response is not `0`.
+        Forbidden
+            If `403` error eccurs.
 
         """
         raise NotImplementedError
 
-    async def put(self, url: str, *, params: Optional[dict] = ...) -> dict:
+    async def put(self, url: str, /) -> dict:
         """Make a PUT request to the amino api.
 
         Parameters
         ----------
-        url: :class:`str`
+        url : :class:`str`
             The resource path.
-        params: :class:`dict`
-            Parameters of the request.
-        kwargs: :class:`Dict[str, Any]`
-            cid: :class:`int`
-                Community id.
-            isglobal: :class:`bool`
-                Community global.
 
         Raises
         ------
         HTTPException:
             Raise when api response is not :class:`0`.
         Forbidden:
-            If 403 error eccurs.
+            If `403` error eccurs.
 
         """
         raise NotImplementedError
 
-    async def delete(self, url: str, params: dict, **kwargs: Any) -> dict:
+    async def delete(self, url: str, **kwargs: Any) -> dict:
         """Make a DELETE request to the amino api.
 
         Parameters
         ----------
-        url: :class:`str`
+        url : :class:`str`
             The resource path.
-        params: :class:`dict`
-            data to send.
-        kwargs: :class:`Dict[str, Any]`
-            cid: :class:`int`
-                Community id.
-            isglobal: :class:`bool`
-                Community global.
+        cid : :class:`int`
+            Community id.
 
         Raises
         ------
-        HTTPException:
+        HTTPException
             Raise when api response is not :class:`0`.
-        Forbidden:
-            If 403 error eccurs.
+        Forbidden
+            If `403` error eccurs.
 
         """
         raise NotImplementedError

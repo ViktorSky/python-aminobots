@@ -22,32 +22,51 @@ SOFTWARE.
 """
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Optional
 
-__all__ = ('Paging',)
+__all__ = ('PushExtensions',)
 
 
 @dataclass(repr=False)
-class Paging:
-    """Represent a Paging of Amino.
+class PushExtensions:
+    """Represents the Global/Community notification settings.
 
     Attributes
     ----------
-    json: :class:`dict`
+    json : :class:`dict`
         The raw API data.
-    nextPageToken: :class:`str`
-        Next Page token.
+    activitiesEnabled : :class:`bool`
+        Notifications from others members activities.
+    broadcastsEnabled : :class:`bool`
+        Broadcasts from Leaders.
+    enabled : :class:`bool`
+        All notifications from the community.
 
     """
-
     json: dict
 
     @cached_property
-    def nextPageToken(self) -> str:
-        """Next page token."""
-        return self.json.get("nextPageToken")
+    def activitiesEnabled(self) -> bool:
+        """Notifications from others members activities.
+
+        Push notifications for others posts and comments.
+
+        """
+        return self.json.get('communityActivitiesEnabled')
 
     @cached_property
-    def prevPageToken(self) -> Optional[str]:
-        """Previous page token."""
-        return self.json.get("prevPageToken")
+    def broadcastsEnabled(self) -> bool:
+        """Broadcasts from Leaders.
+
+        Push notifications sent by Leaders of the community.
+
+        """
+        return self.json.get('communityBroadcastsEnabled')
+
+    @cached_property
+    def enabled(self) -> bool:
+        """All notifications from the community.
+        
+        Chat Messages, Comments, etc...
+
+        """
+        return self.json.get('systemEnabled')

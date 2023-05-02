@@ -33,65 +33,65 @@ class AvatarFrameList:
 
     Attributes
     ----------
-    json: List[:class:`dict`]
+    json : List[:class:`dict`]
         The raw API data.
-    id: List[:class:`str`]
+    ids : List[:class:`str`]
         Users avatar frame ids.
-    icon: List[:class:`str`]
+    icons : List[:class:`str`]
         Users avatar frame icon urls.
-    name: List[:class:`str`]
+    names : List[:class:`str`]
         Users avatar frame names.
-    ownershipStatus: List[Optional[:class:`str`]]
+    ownershipStatuses : List[Optional[:class:`str`]]
         Users avatar frame ownership stats.
-    status: List[:class:`int`]
+    statuses : List[:class:`int`]
         Users avatar frame status.
-    type: List[:class:`int`]
+    types : List[:class:`int`]
         Users avatar frame types.
-    version: List[:class:`int`]
+    versions : List[:class:`int`]
         Users avatar frame versions.
-    url: List[:class:`str`]
+    urls : List[:class:`str`]
         Users avatar frame resource urls. (zip)
 
     """
     json: List[dict]
 
     @cached_property
-    def id(self) -> List[str]:
+    def ids(self) -> List[str]:
         """Users avatar frame ids."""
         return [af.get("frameId") for af in self.json]
 
     @cached_property
-    def icon(self) -> List[str]:
+    def icons(self) -> List[str]:
         """Users avatar frame icon urls."""
         return [af.get("icon") for af in self.json]
 
     @cached_property
-    def name(self) -> List[str]:
+    def names(self) -> List[str]:
         """Users avatar frame names."""
         return [af.get("name") for af in self.json]
 
     @cached_property
-    def ownershipStatus(self) -> List[Optional[str]]:
+    def ownershipStatuses(self) -> List[Optional[str]]:
         """Users avatar frame ownership status."""
         return [af.get("ownershipStatus") for af in self.json]
 
     @cached_property
-    def status(self) -> List[int]:
+    def statuses(self) -> List[int]:
         """Users avatar frame status."""
         return [af.get("status") for af in self.json]
 
     @cached_property
-    def type(self) -> List[int]:
+    def types(self) -> List[int]:
         """Users avatar frame types."""
         return [af.get("frameType") for af in self.json]
 
     @cached_property
-    def version(self) -> List[int]:
+    def versions(self) -> List[int]:
         """Users avatar frame versions."""
         return [af.get("version") for af in self.json]
 
     @cached_property
-    def url(self) -> List[str]:
+    def urls(self) -> List[str]:
         """Users avatar frame resource urls. (zip)"""
         return [af.get("resourceUrl") for af in self.json]
 
@@ -102,18 +102,25 @@ class BackgroundMediaList:
 
     Attributes
     ----------
-    json: List[List[List[:class:`int`, :class:`str`, `None`, `None`, `None`, :class:`dict`]]]
+    json : List[List[List[:class:`int`, :class:`str`, `None`, `None`, `None`, :class:`dict`]]]
         The raw API data.
-    url: List[Optional[:class:`str`]]
+    types : List[Optional[:class:`str`]]
+        Users baground media types.
+    urls : List[Optional[:class:`str`]]
         Users baground urls.
 
     """
     json: List[List[Tuple[int, str, None, None, None, dict]]]
 
     @cached_property
-    def url(self) -> List[Optional[str]]:
+    def types(self) -> List[Optional[str]]:
+        """Users background types."""
+        return [bg[0][0] if (bg and bg[0]) else None for bg in self.json]
+
+    @cached_property
+    def urls(self) -> List[Optional[str]]:
         """Users background urls."""
-        return [bg[0][1] if bg and any(bg[0]) else None for bg in self.json]
+        return [bg[0][1] if (bg and bg[0]) else None for bg in self.json]
 
 
 @dataclass(repr=False)
@@ -122,16 +129,16 @@ class DeviceInfoList:
 
     Attributes
     ----------
-    json: List[:class:`dict`]
+    json : List[:class:`dict`]
         The raw API data.
-    lastClientType: List[:class:`int`]
+    lastClientTypes : List[:class:`int`]
         Users last device client types.
 
     """
     json: List[dict]
 
     @cached_property
-    def lastClientType(self) -> List[int]:
+    def lastClientTypes(self) -> List[int]:
         """Users last device client types."""
         return [di.get("lastClientType") for di in self.json]
 
@@ -142,114 +149,34 @@ class StyleList:
 
     Attributes
     ----------
-    json: List[:class:`dict`]
+    json : List[:class:`dict`]
         The raw API data.
-    background: :class:`BackgroundMediaList`
+    backgrounds : :class:`BackgroundMediaList`
         Users backgrounds.
-    backgroundUrl: List[Optional[:class:`str`]]
+    backgroundUrls : List[Optional[:class:`str`]]
         Users background hex color codes.
 
     """
     json: List[dict]
 
     @cached_property
-    def background(self) -> BackgroundMediaList:
+    def backgrounds(self) -> BackgroundMediaList:
         """Users backgrounds."""
         return BackgroundMediaList([s.get("backgroundMediaList") or [] for s in self.json])
 
     @cached_property
-    def backgroundUrl(self) -> List[Optional[str]]:
+    def backgroundUrls(self) -> List[Optional[str]]:
         """Users background hex color codes."""
-        return self.background.url
+        return self.backgrounds.urls
 
 
 @dataclass(repr=False)
 class ExtensionList:
-    """Represent the user profile list extensions.
-
-    Attributes
-    ----------
-    json: List[:class:`dict`]
-        The raw API data.
-    acpDeeplink: List[Optional[:class:`str`]]
-        Users acp deep link.
-    adsEnabled: List[Optional[:class:`bool`]]
-        Users ads enabled.
-    adsFlags: List[Optional[:class:`int`]]
-        Users ads flags.
-    backgroundMedia: :class:`BackgroundMediaList`
-        Users background media list.
-    backgroundUrl(self) -> List[Optional[str]]:
-        return self.style.backgroundUrl
-
-    @cached_property
-    def backgroundUrlList(self) -> List[List[str]]:
-        return self.style.backgroundUrlList
-
-    @cached_property
-    def creatorDeeplink(self) -> List[Optional[str]]:
-        return [e.get("creatorDeeplink") for e in self.json]
-
-    @cached_property
-    def customTitles(self):
-        return [e.get("customTitles") for e in self.json]
-
-    @cached_property
-    def defaultBubbleId(self) -> List[Optional[str]]:
-        return [e.get("defaultBubbleId") for e in self.json]
-
-    @cached_property
-    def deviceInfo(self) -> DeviceInfoList:
-        return DeviceInfoList([e.get("deviceInfo") or {} for e in self.json])
-
-    @cached_property
-    def disabledLevel(self):
-        return [e.get("__disabledLevel__") for e in self.json]
-
-    @cached_property
-    def disabledStatus(self):
-        return [e.get("__disabledStatus__") for e in self.json]
-
-    @cached_property
-    def disabledTime(self):
-        return [e.get("__disabledTime__") for e in self.json]
-
-    @cached_property
-    def isMemberOfTeamAmino(self) -> bool:
-        return [e.get("isMemberOfTeamAmino") or False for e in self.json]
-
-    @cached_property
-    def privilegeOfChatInviteRequest(self) -> List[Optional[int]]:
-        return [e.get("privilegeOfChatInviteRequest") for e in self.json]
-
-    @cached_property
-    def privilegeOfChatRequest(self) -> List[Optional[int]]:
-        return [e.get("privilegeOfChatRequest") for e in self.json]
-
-    @cached_property
-    def privilegeOfCommentOnUserProfile(self) -> List[Optional[int]]:
-        return [e.get("privilegeOfCommentOnUserProfile") for e in self.json]
-
-    @cached_property
-    def privilegeOfPublicChat(self) -> List[Optional[int]]:
-        return [e.get("privilegeOfPublicChat") for e in self.json]
-
-    @cached_property
-    def privilegeOfVideoChat(self) -> Optional[int]:
-        return [e.get("privilegeOfVideoChat") for e in self.json]
-
-    @cached_property
-    def style(self) -> StyleList:
-        return StyleList([e.get("style") or {} for e in self.json])
-
-    @cached_property
-    def tippingPermStatus(self) -> Optional[int]:
-
-    """
+    """Represent the user profile list extensions."""
     json: List[dict]
 
     @cached_property
-    def acpDeeplink(self) -> List[Optional[str]]:
+    def acpDeeplinks(self) -> List[Optional[str]]:
         return [e.get("acpDeeplink") for e in self.json]
 
     @cached_property
@@ -261,15 +188,15 @@ class ExtensionList:
         return self.json.get("adsFlags")
 
     @cached_property
-    def background(self) -> BackgroundMediaList:
-        return self.style.background
+    def backgrounds(self) -> BackgroundMediaList:
+        return self.styles.backgrounds
+
+    #@cached_property
+    #def backgroundColors(self) -> List[Optional[str]]:
+    #    return self.styles.backgroundsColors
 
     @cached_property
-    def backgroundColor(self) -> List[Optional[str]]:
-        return self.style.backgroundColor
-
-    @cached_property
-    def creatorDeeplink(self) -> List[Optional[str]]:
+    def creatorDeeplinks(self) -> List[Optional[str]]:
         return [e.get("creatorDeeplink") for e in self.json]
 
     @cached_property
@@ -277,55 +204,51 @@ class ExtensionList:
         return [e.get("customTitles") for e in self.json]
 
     @cached_property
-    def defaultBubbleId(self) -> List[Optional[str]]:
+    def defaultBubbleIds(self) -> List[Optional[str]]:
         return [e.get("defaultBubbleId") for e in self.json]
 
     @cached_property
-    def deviceInfo(self) -> DeviceInfoList:
+    def deviceInfos(self) -> DeviceInfoList:
         return DeviceInfoList([e.get("deviceInfo") or {} for e in self.json])
 
     @cached_property
-    def disabledLevel(self):
+    def disabledLevels(self):
         return [e.get("__disabledLevel__") for e in self.json]
 
     @cached_property
-    def disabledStatus(self):
+    def disabledStatuses(self):
         return [e.get("__disabledStatus__") for e in self.json]
 
     @cached_property
-    def disabledTime(self):
+    def disabledTimes(self):
         return [e.get("__disabledTime__") for e in self.json]
 
     @cached_property
-    def isMemberOfTeamAmino(self) -> bool:
-        return [e.get("isMemberOfTeamAmino") or False for e in self.json]
-
-    @cached_property
-    def privilegeOfChatInviteRequest(self) -> List[Optional[int]]:
+    def privilegesOfChatInviteRequest(self) -> List[Optional[int]]:
         return [e.get("privilegeOfChatInviteRequest") for e in self.json]
 
     @cached_property
-    def privilegeOfChatRequest(self) -> List[Optional[int]]:
+    def privilegesOfChatRequest(self) -> List[Optional[int]]:
         return [e.get("privilegeOfChatRequest") for e in self.json]
 
     @cached_property
-    def privilegeOfCommentOnUserProfile(self) -> List[Optional[int]]:
+    def privilegesOfCommentOnUserProfile(self) -> List[Optional[int]]:
         return [e.get("privilegeOfCommentOnUserProfile") for e in self.json]
 
     @cached_property
-    def privilegeOfPublicChat(self) -> List[Optional[int]]:
+    def privilegesOfPublicChat(self) -> List[Optional[int]]:
         return [e.get("privilegeOfPublicChat") for e in self.json]
 
     @cached_property
-    def privilegeOfVideoChat(self) -> Optional[int]:
+    def privilegesOfVideoChat(self) -> Optional[int]:
         return [e.get("privilegeOfVideoChat") for e in self.json]
 
     @cached_property
-    def style(self) -> StyleList:
+    def styles(self) -> StyleList:
         return StyleList([e.get("style") or {} for e in self.json])
 
     @cached_property
-    def tippingPermStatus(self) -> Optional[int]:
+    def tippingPermStatuses(self) -> Optional[int]:
         return [e.get("tippingPermStatus") for e in self.json]
 
 
@@ -335,26 +258,27 @@ class InfluencerInfoList:
 
     Attributes
     ----------
-    json: List[:class:;`dict`]
+    json : List[:class:;`dict`]
         The raw API data.
-    fansCount: List[:class:`int`]
+    fans : List[:class:`int`]
         Users fans counts.
-    createdTime: List[:class:`str`]
+    createdTimes : List[:class:`str`]
         Users vip created dates.
     pinned: List[:class:`bool`]
         Users pinned.
-    monthlyFee: List[:class:`int`]
+    monthlyFees : List[:class:`int`]
         Users monthly fee.
 
     """
     json: List[dict]
 
     @cached_property
-    def fansCount(self) -> List[int]:
+    def fans(self) -> List[int]:
+        """Fans counts."""
         return [i.get('fansCount') for i in self.json]
 
     @cached_property
-    def createdTime(self) -> List[str]:
+    def createdTimes(self) -> List[str]:
         """Users vip created dates."""
         return [i.get('createdTime') for i in self.json]
 
@@ -364,7 +288,7 @@ class InfluencerInfoList:
         return [i.get('pinned') for i in self.json]
 
     @cached_property
-    def monthlyFee(self) -> List[int]:
+    def monthlyFees(self) -> List[int]:
         """Users monthly fee."""
         return [i.get('monthlyFee') for i in self.json]
 
@@ -390,16 +314,24 @@ class LinkedBackgroundMediaList:
     ----------
     json: List[List[List[List[:class:`int`, :class:`str`, `None`, `None`, `None`, :class:`dict`]]]]
         The raw API data.
-    url: List[List[List[:class:`str`]]]
+    types : List[List[List[:class:`str`]]]
+        Linked communities background type list.
+    urls : List[List[List[:class:`str`]]]
         Linked communities background url list.
 
     """
     json: List[List[List[Tuple[int, str, None, None, None, dict]]]]
 
+
     @cached_property
-    def url(self) -> List[List[List[str]]]:
+    def types(self) -> List[List[List[int]]]:
         """Linked communities background url list."""
-        return [[bg[0][1] if bg and any(bg[0]) else None for bg in bgl] for bgl in self.json]
+        return [[bg[0][0] if (bg and bg[0]) else None for bg in bgl] for bgl in self.json]
+
+    @cached_property
+    def urls(self) -> List[List[List[str]]]:
+        """Linked communities background url list."""
+        return [[bg[0][1] if (bg and bg[0]) else None for bg in bgl] for bgl in self.json]
 
 
 @dataclass(repr=False)
@@ -410,21 +342,21 @@ class LinkedStyleList:
     ----------
     json: List[List[List[:class:`dict`]]]
         The raw API data.
-    background: :class:`LinkedBackgroundMediaList`
+    backgrounds : :class:`LinkedBackgroundMediaList`
         Topic background list.
-    backgroundColor: List[List[List[Optional[:class:`str`]]]]
+    backgroundColors : List[List[List[Optional[:class:`str`]]]]
         Topic background color list.
 
     """
     json: List[List[List[dict]]]
 
     @cached_property
-    def background(self) -> LinkedBackgroundMediaList:
+    def backgrounds(self) -> LinkedBackgroundMediaList:
         """Topic background list."""
         return LinkedBackgroundMediaList([[[s.get("backgroundMediaList") or [] for s in ls] for ls in lsl] for lsl in self.json])
 
     @cached_property
-    def backgroundColor(self) -> List[List[List[Optional[str]]]]:
+    def backgroundColors(self) -> List[List[List[Optional[str]]]]:
         """Topic background color list."""
         return [[[s.get('backgroundColor')for s in ls]for ls in lsl]for lsl in self.json]
 
@@ -437,42 +369,42 @@ class LinkedAddedTopicList:
     ----------
     json: List[List[List[:class:`dict`]]]
         The raw API data.
-    background: :class:`BackgroundMediaList`
+    backgrounds : :class:`BackgroundMediaList`
         Topics background list.
-    backgroundColor: List[List[List[:class:`str`]]]
+    backgroundColors : List[List[List[:class:`str`]]]
         Hex colors codes.
-    name: List[List[List[:class:`str`]]]
+    names : List[List[List[:class:`str`]]]
         Topic names.
-    style: :class:`LinkedStyleList`
+    styles : :class:`LinkedStyleList`
         Topic style.
-    id: List[List[List[:class:`int`]]]
+    ids : List[List[List[:class:`int`]]]
         Topic ids.
 
     """
     json: List[List[List[dict]]]
 
     @cached_property
-    def background(self) -> BackgroundMediaList:
+    def backgrounds(self) -> BackgroundMediaList:
         """Topics background media list."""
-        return self.style.background
+        return self.styles.backgrounds
 
     @cached_property
-    def backgroundColor(self) -> List[str]:
+    def backgroundColors(self) -> List[str]:
         """Topics background hex colors codes."""
-        return self.style.backgroundColor
+        return self.styles.backgroundColors
 
     @cached_property
-    def name(self) -> List[List[List[str]]]:
+    def names(self) -> List[List[List[str]]]:
         """Topic names."""
         return [[[lt.get("name") for lt in lat] for lat in latl] for latl in self.json]
 
     @cached_property
-    def style(self) -> LinkedStyleList:
+    def styles(self) -> LinkedStyleList:
         """Topics styles."""
         return LinkedStyleList([[[lt.get("style") or {} for lt in lat] for lat in latl] for latl in self.json])
 
     @cached_property
-    def id(self) -> List[List[List[int]]]:
+    def ids(self) -> List[List[List[int]]]:
         """Topics ids."""
         return [[[lt.get("topicId") for lt in lat] for lat in latl] for latl in self.json]
 
@@ -492,7 +424,7 @@ class LinkedAgentList:
     json: List[List[dict]]
 
     @cached_property
-    def id(self) -> List[List[str]]:
+    def ids(self) -> List[List[str]]:
         """Linked communities users agents ids."""
         return [[a.get("uid") for a in ag] for ag in self.json]
 
@@ -505,15 +437,20 @@ class LinkedPromotionalMediaList:
     ----------
     json: List[List[Tuple[:class:`int`, :class:`str`, `None`]]]
         The raw API data.
-    url: List[List[:class:`str`]]
+    urls : List[List[:class:`str`]]
         Linked communities promotional media url.
 
     """
     json: List[List[Tuple[int, str, None]]]
 
     @cached_property
-    def url(self) -> List[List[str]]:
-        """Linked communities promotional media url."""
+    def types(self) -> List[List[str]]:
+        """Linked communities promotional media types."""
+        return [[ml[0] if ml else None for ml in pml] for pml in self.json]
+
+    @cached_property
+    def urls(self) -> List[List[str]]:
+        """Linked communities promotional media urls."""
         return [[ml[1] if ml else None for ml in pml] for pml in self.json]
         # return [[[ml[1] if ml else None for ml in pm] for pm in pml] for pml in self.json]
 
@@ -523,37 +460,37 @@ class LinkedThemePackList:
 
     Attributes
     ----------
-    json: List[List[:class:`dict`]]
+    json : List[List[:class:`dict`]]
         The raw API data.
-    color: List[List[:class:`str`]]
+    colors : List[List[:class:`str`]]
         Theme packs hex color codes.
-    hash: List[List[:class:`str`]]
+    hashs : List[List[:class:`str`]]
         Theme packs hashs.
-    revision: List[List[:class:`int`]]
+    revisions : List[List[:class:`int`]]
         Theme packs revisions.
-    url: List[List[:class:`str`]]
+    urls : List[List[:class:`str`]]
         Theme packs urls.
 
     """
     json: List[List[dict]]
 
     @cached_property
-    def color(self) -> List[List[str]]:
+    def colors(self) -> List[List[str]]:
         """Theme packs hex color codes."""
         return [[tp.get("themeColor") for tp in tpl] for tpl in self.json]
 
     @cached_property
-    def hash(self) -> List[List[str]]:
+    def hashs(self) -> List[List[str]]:
         """Theme packs hashs."""
         return [[tp.get("themePackHash") for tp in tpl] for tpl in self.json]
 
     @cached_property
-    def revision(self) -> List[List[int]]:
+    def revisions(self) -> List[List[int]]:
         """Theme packs revisions."""
         return [[tp.get("themePackRevision") for tp in tpl] for tpl in self.json]
 
     @cached_property
-    def url(self) -> List[List[str]]:
+    def urls(self) -> List[List[str]]:
         """Theme packs urls."""
         return [[tp.get("themePackUrl") for tp in tpl] for tpl in self.json]
 
@@ -566,161 +503,161 @@ class LinkedCommunityList:
     ----------
     json: List[List[:class:`dict`]]
         The raw API data.
-    activeInfo: :class:`LinkedActiveInfoList`
+    activeInfos : :class:`LinkedActiveInfoList`
         Linked communities active info.
-    addedTopic: :class:`LinkedAddedTopicList`
+    addedTopics : :class:`LinkedAddedTopicList`
         Linked communities added topics.
-    agent: :class:`LinkedAgentList`
+    agents : :class:`LinkedAgentList`
         Linked communities users agents profiles.
-    aminoId: List[List[:class:`str`]]
+    aminoIds : List[List[:class:`str`]]
         Linked communities amino ids.
-    comId: List[List[:class:`int`]]
+    communityIds : List[List[:class:`int`]]
         Linked communities ids.
-    createdTime: List[List[:class:`str`]]
+    createdTimes : List[List[:class:`str`]]
         Linked communities created dates.
-    description: List[List[:class:`str`]]
+    descriptions : List[List[:class:`str`]]
         Linked communites descriptions.
-    heat: List[List[:class:`int`]]
+    heats : List[List[:class:`int`]]
         Linked communities heats.
-    icon: List[List[:class:`str`]]
+    icons : List[List[:class:`str`]]
         Linked communities icon urls.
-    joinType: List[List[:class:`int`]]
+    joinTypes : List[List[:class:`int`]]
         Linked communities join types.
-    language: List[List[:class:`str`]]
+    languages : List[List[:class:`str`]]
         Linked communities languages.
-    link: List[List[:class:`str`]]
+    links : List[List[:class:`str`]]
         Linked communities links.
-    listedStatus: List[List[:class:`int`]]
+    listedStatuses : List[List[:class:`int`]]
         Linked communities listed status.
-    membersCount: List[List[:class:`int`]]
+    members : List[List[:class:`int`]]
         Linked communities members counts.
-    modifiedTime: List[List[:class:`str`]]
+    modifiedTimes : List[List[:class:`str`]]
         Linked communities modified times.
-    name: List[List[:class:`str`]]
+    names : List[List[:class:`str`]]
         Linked communities names.
-    probationStatus: List[List[:class:`int`]]
+    probationStatuses : List[List[:class:`int`]]
         Linked communities probation status.
-    promotionalMedia: :class:`LinkedPromotionalMediaList`
+    promotionalMedias : :class:`LinkedPromotionalMediaList`
         Linked communities promotional medias.
-    status: List[List[:class:`int`]]
+    statuses : List[List[:class:`int`]]
         Linked communities status.
-    templateId: List[List[:class:`str`]]
+    templateIds : List[List[:class:`str`]]
         Linked communities template ids.
-    themePack: :class:`LinkedThemePackList`
+    themePacks : :class:`LinkedThemePackList`
         Linked communities theme packs.
-    updatedTime: List[List[:class:`str`]]
+    updatedTimes : List[List[:class:`str`]]
         Linked communities updated dates.
 
     """
     json: List[List[dict]]
 
     @cached_property
-    def activeInfo(self) -> LinkedActiveInfoList:
+    def activeInfos(self) -> LinkedActiveInfoList:
         """Linked communities active info."""
         return LinkedActiveInfoList([[c.get("activeInfo") or {} for c in lcl] for lcl in self.json])
 
     @cached_property
-    def addedTopic(self) -> LinkedAddedTopicList:
+    def addedTopics(self) -> LinkedAddedTopicList:
         """Linked communities added topics."""
         return LinkedAddedTopicList([[c.get("userAddedTopicList") or {} for c in lcl] for lcl in self.json])
 
     @cached_property
-    def agent(self) -> LinkedAgentList:
+    def agents(self) -> LinkedAgentList:
         """Linked communities users agents profiles."""
         return LinkedAgentList([[c.get("agent") or {} for c in lcl] for lcl in self.json])
 
     @cached_property
-    def aminoId(self) -> List[List[str]]:
+    def aminoIds(self) -> List[List[str]]:
         """Linked communities amino ids."""
         return [[c.get("endpoint") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def comId(self) -> List[List[int]]:
+    def communityIds(self) -> List[List[int]]:
         """Linked communities ids."""
         return [[c.get("ndcId") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def createdTime(self) -> List[List[str]]:
+    def createdTimes(self) -> List[List[str]]:
         """Linked communities created dates."""
         return [[c.get("createdTime") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def description(self) -> List[List[str]]:
+    def descriptions(self) -> List[List[str]]:
         """Linked communites descriptions."""
         return [[c.get("tagline") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def heat(self) -> List[List[int]]:
+    def heats(self) -> List[List[int]]:
         """Linked communities heats."""
         return [[c.get("communityHeat") or 0 for c in lcl] for lcl in self.json]
 
     @cached_property
-    def icon(self) -> List[List[str]]:
+    def icons(self) -> List[List[str]]:
         """Linked communites icon urls."""
         return [[c.get("icon") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def joinType(self) -> List[List[int]]:
+    def joinTypes(self) -> List[List[int]]:
         """Linked communities join types."""
         return [[c.get("joinType") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def primaryLanguage(self) -> List[List[str]]:
+    def primaryLanguages(self) -> List[List[str]]:
         """Linked communities languages."""
         return [[c.get("primaryLanguage") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def link(self) -> List[List[str]]:
+    def links(self) -> List[List[str]]:
         """Linked communities links."""
         return [[c.get("link") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def listedStatus(self) -> List[List[int]]:
+    def listedStatuses(self) -> List[List[int]]:
         """Linked communities listed status."""
         return [[c.get("listedStatus") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def membersCount(self) -> List[List[int]]:
+    def members(self) -> List[List[int]]:
         """Linked communities members counts."""
         return [[c.get("membersCount") or 0 for c in lcl] for lcl in self.json]
 
     @cached_property
-    def modifiedTime(self) -> List[List[str]]:
+    def modifiedTimes(self) -> List[List[str]]:
         """Linked communities modified times."""
         return [[c.get("modifiedTime") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def name(self) -> List[List[str]]:
+    def names(self) -> List[List[str]]:
         """Linked communities names."""
         return [[c.get("name") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def probationStatus(self) -> List[List[int]]:
+    def probationStatuses(self) -> List[List[int]]:
         """Linked communities probation status."""
         return [[c.get("probationStatus") or 0 for c in lcl] for lcl in self.json]
 
     @cached_property
-    def promotionalMedia(self) -> LinkedPromotionalMediaList:
+    def promotionalMedias(self) -> LinkedPromotionalMediaList:
         """Linked communities promotional medias."""
         return LinkedPromotionalMediaList([[c.get("promotionalMediaList") or [] for c in lcl] for lcl in self.json])
 
     @cached_property
-    def status(self) -> List[List[int]]:
+    def statuses(self) -> List[List[int]]:
         """Linked communities status."""
         return [[c.get("status") or 0 for c in lcl] for lcl in self.json]
 
     @cached_property
-    def templateId(self) -> List[List[str]]:
+    def templateIds(self) -> List[List[str]]:
         """Linked communities template ids."""
         return [[c.get("templateId") for c in lcl] for lcl in self.json]
 
     @cached_property
-    def themePack(self) -> LinkedThemePackList:
+    def themePacks(self) -> LinkedThemePackList:
         """Linked communities theme packs."""
         return LinkedThemePackList([[c.get("themePack") or {} for c in lcl] for lcl in self.json])
 
     @cached_property
-    def updatedTime(self) -> List[List[str]]:
+    def updatedTimes(self) -> List[List[str]]:
         """Linked communities updated dates."""
         return [[c.get("updatedTime") for c in lcl] for lcl in self.json]
 
@@ -740,7 +677,11 @@ class MediaList:
     json: List[List[List[Tuple[int, str, None]]]]
 
     @cached_property
-    def url(self) -> List[List[str]]:
+    def types(self) -> List[List[int]]:
+        return [[m[0] if m else None for m in ml] for ml in self.json]
+
+    @cached_property
+    def urls(self) -> List[List[str]]:
         """Users medias urls."""
         return [[m[1] if m else None for m in ml] for ml in self.json]
 
@@ -761,10 +702,6 @@ class UserProfileList:
         ...
     aminoId: List[:class:`str`]
         Amino ids
-    avatar: :class:`AvatarFrameList`
-        Avatar frames.
-    avatarId: List[:class:`str`]
-        User avatar frame ids.
     bio: List[Optional[:class:`str`]]
         Users bios.
     blogsCount: List[:class:`int`]
@@ -787,6 +724,10 @@ class UserProfileList:
         Users following counts.
     followingStatus: List[:class:`int`]
         Following status.
+    frame: :class:`AvatarFrameList`
+        Avatar frames.
+    frameId: List[:class:`str`]
+        User avatar frame ids.
     id: List[:class:`str`]
         Users ids.
     icon: List[:class:`str`]
@@ -840,44 +781,40 @@ class UserProfileList:
     json: List[dict]
 
     @cached_property
-    def accountMembershipStatus(self) -> List[int]:
+    def accountMembershipStatuses(self) -> List[int]:
         return [up.get("accountMembershipStatus") or 0 for up in self.json]
 
     @cached_property
-    def acpDeeplink(self) -> List[Optional[str]]:
-        return self.extensions.acpDeeplink
+    def acpDeeplinks(self) -> List[Optional[str]]:
+        return self.extensions.acpDeeplinks
 
     @cached_property
     def adminLogCountIn7Days(self):
         return [up.get("adminLogCountIn7Days") for up in self.json]
 
     @cached_property
-    def aminoId(self) -> List[str]:
+    def aminoIds(self) -> List[str]:
         return [up.get("aminoId") for up in self.json]
 
     @cached_property
-    def avatar(self) -> AvatarFrameList:
-        return AvatarFrameList([up.get("avatarFrame") or {} for up in self.json])
+    def areGlobal(self) -> List[bool]:
+        return [up.get("isGlobal") for up in self.json]
 
     @cached_property
-    def avatarId(self) -> List[str]:
-        """User avatar frame ids."""
-        return [up.get('avatarFrameId') for up in self.json] or self.avatar.id
-
-    @cached_property
-    def bio(self) -> List[Optional[str]]:
+    def bios(self) -> List[Optional[str]]:
         return [up.get("content") or 0 for up in self.json]
 
     @cached_property
-    def blogsCount(self) -> List[int]:
+    def blogs(self) -> List[int]:
         return [up.get("blogsCount") or 0 for up in self.json]
 
     @cached_property
-    def comId(self) -> List[Optional[int]]:
+    def comunityIds(self) -> List[Optional[int]]:
         return [up.get("ndcId") or None for up in self.json]
 
     @cached_property
-    def commentsCount(self) -> List[int]:
+    def comments(self) -> List[int]:
+        """Comments counts."""
         return [up.get("commentsCount") or 0 for up in self.json]
 
     @cached_property
@@ -885,47 +822,52 @@ class UserProfileList:
         return [up.get("consecutiveCheckInDays") for up in self.json]
 
     @cached_property
-    def createdTime(self) -> List[str]:
+    def createdTimes(self) -> List[str]:
         return [up.get("createdTime") for up in self.json]
 
     @cached_property
-    def creatorDeeplink(self) -> Optional[str]:
-        return self.extensions.creatorDeeplink
+    def creatorDeeplinks(self) -> Optional[str]:
+        return self.extensions.creatorDeeplinks
 
     @cached_property
     def extensions(self) -> ExtensionList:
         return ExtensionList([up.get("extensions") or {} for up in self.json])
 
     @cached_property
-    def followersCount(self) -> List[int]:
+    def followers(self) -> List[int]:
         return [up.get("membersCount") for up in self.json]
 
     @cached_property
-    def followingsCount(self) -> List[int]:
+    def followings(self) -> List[int]:
         return [up.get("joinedCount") for up in self.json]
 
     @cached_property
-    def followingStatus(self) -> List[int]:
+    def followingsStatus(self) -> List[int]:
         return [up.get("followingStatus") for up in self.json]
 
     @cached_property
-    def id(self) -> List[str]:
+    def frames(self) -> AvatarFrameList:
+        return AvatarFrameList([up.get("avatarFrame") or {} for up in self.json])
+
+    @cached_property
+    def frameIds(self) -> List[str]:
+        """User avatar frame ids."""
+        return [up.get('avatarFrameId') for up in self.json] or self.frames.ids
+
+    @cached_property
+    def ids(self) -> List[str]:
         return [up.get("uid") for up in self.json]
 
     @cached_property
-    def icon(self) -> List[str]:
+    def icons(self) -> List[str]:
         return [up.get("icon") for up in self.json]
 
     @cached_property
-    def influencer(self) -> InfluencerInfoList:
+    def influencers(self) -> InfluencerInfoList:
         return InfluencerInfoList([i.get('influencerInfo') for i in self.json])
 
     @cached_property
-    def isGlobal(self) -> bool:
-        return all(up.get("isGlobal") for up in self.json)
-
-    @cached_property
-    def level(self) -> List[int]:
+    def levels(self) -> List[int]:
         return [up.get("level") or 0 for up in self.json]
 
     @cached_property
@@ -933,73 +875,143 @@ class UserProfileList:
         return LinkedCommunityList([up.get("linkedCommunityList") or [] for up in self.json])
 
     @cached_property
-    def media(self) -> MediaList:
+    def medias(self) -> MediaList:
         return MediaList([up.get("mediaList") or [] for up in self.json])
 
     @cached_property
-    def membershipStatus(self) -> List[int]:
+    def membershipStatuses(self) -> List[int]:
         return [up.get("membershipStatus") or 0 for up in self.json]
 
     @cached_property
-    def modifiedTime(self) -> List[str]:
+    def modifiedTimes(self) -> List[str]:
         return [up.get("modifiedTime") for up in self.json]
 
     @cached_property
-    def mood(self):
+    def moods(self):
         return [up.get("mood") for up in self.json]
 
     @cached_property
-    def moodSticker(self):
+    def moodStickers(self):
         return [up.get("moodSticker") for up in self.json]
 
     @cached_property
-    def nickname(self) -> List[str]:
+    def nicknames(self) -> List[str]:
         return [up.get("nickname") for up in self.json]
 
     @cached_property
-    def nicknameVerified(self) -> List[bool]:
+    def nicknamesVerified(self) -> List[bool]:
         return [up.get("isNicknameVerified") for up in self.json]
 
     @cached_property
-    def notifSubStatus(self) -> List[int]:  # [0, 1]
+    def notifSubStatuses(self) -> List[int]:  # [0, 1]
         return [up.get("notificationSubscriptionStatus") for up in self.json]
 
     @cached_property
-    def onlineStatus(self) -> List[int]:
+    def onlineStatuses(self) -> List[int]:
         return [up.get("onlineStatus") for up in self.json]
 
     @cached_property
-    def postsCount(self) -> List[int]:
+    def posts(self) -> List[int]:
         return [up.get("postsCount") or 0 for up in self.json]
 
     @cached_property
-    def privilegeOfChatRequest(self) -> List[int]:
-        return self.extensions.privilegeOfChatRequest
+    def privilegesOfChatRequest(self) -> List[int]:
+        return self.extensions.privilegesOfChatRequest
 
     @cached_property
     def pushEnabled(self) -> List[bool]:
         return [up.get("pushEnabled") for up in self.json]
 
     @cached_property
-    def reputation(self) -> List[int]:
+    def reputations(self) -> List[int]:
         return [up.get("reputation") or 0 for up in self.json]
 
     @cached_property
-    def role(self) -> List[int]:
+    def roles(self) -> List[int]:
         return [up.get("role") for up in self.json]
 
     @cached_property
-    def status(self) -> List[int]:
+    def statuses(self) -> List[int]:
         return [up.get("status") for up in self.json]
 
     @cached_property
-    def storiesCount(self) -> List[int]:
+    def stories(self) -> List[int]:
         return [up.get("storiesCount") or 0 for up in self.json]
 
     @cached_property
-    def style(self) -> StyleList:
-        return self.extensions.style
+    def styles(self) -> StyleList:
+        return self.extensions.styles
 
     @cached_property
-    def wikisCount(self) -> List[int]:
+    def wikis(self) -> List[int]:
         return [up.get("itemsCount") for up in self.json]
+
+
+@dataclass(repr=False)
+class AuthorList:
+    json: List[dict]
+
+    @cached_property
+    def accountMembershipStatuses(self) -> List[int]:
+        return [author.get('accountMembershipStatus') for author in self.json]
+
+    @cached_property
+    def areGlobal(self) -> List[bool]:
+        return [author.get('isGlobal') for author in self.json]
+
+    @cached_property
+    def communityIds(self) -> List[int]:
+        return [author.get('ndcId') for author in self.json]
+
+    @cached_property
+    def followers(self) -> List[int]:
+        return [author.get('membersCount') for author in self.json]
+
+    @cached_property
+    def followingStatuses(self) -> List[int]:
+        return [author.get('followingStatus') for author in self.json]
+
+    @cached_property
+    def frames(self) -> AvatarFrameList:
+        return AvatarFrameList([author.get('avatarFrame') or {} for author in self.json])
+
+    @cached_property
+    def frameIds(self) -> List[str]:
+        return [author.get('avatarFrameId') for author in self.json] or self.frames.ids
+
+    @cached_property
+    def icons(self) -> List[str]:
+        return [author.get('icon') for author in self.json]
+
+    @cached_property
+    def ids(self) -> List[str]:
+        """User ids."""
+        return [author.get('uid') for author in self.json]
+
+    @cached_property
+    def levels(self) -> List[int]:
+        return [author.get('level') for author in self.json]
+
+    @cached_property
+    def membershipStatuses(self) -> List[int]:
+        return [author.get('membershipStatus') for author in self.json]
+
+    @cached_property
+    def nicknames(self) -> List[str]:
+        return [author.get('nickname') for author in self.json]
+
+    @cached_property
+    def nicknameVerified(self) -> List[bool]:
+        return [author.get('isNicknameVerified') for author in self.json]
+
+    @cached_property
+    def reputations(self) -> List[int]:
+        return [author.get('reputation') for author in self.json]
+
+    @cached_property
+    def roles(self) -> List[int]:
+        return [author.get('role') for author in self.json]
+
+    @cached_property
+    def statuses(self) -> List[int]:
+        return [author.get('status') for author in self.json]

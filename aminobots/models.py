@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import List, Optional, Union
+from typing import Optional, Union
 from dataclasses import dataclass
 from functools import cached_property
 from .utils import Date
@@ -30,12 +30,29 @@ from . import objects
 
 __all__ = (
     'AccountInfo',
+    'AllPushSettings'
+    'Api',
+    'ChatInfo',
+    'ChatMembers',
+    'CommunityInfluencers',
+    'CommunityInfo',
+    'FromDevice',
+    'HTTPResponse',
     'JoinedCommunities',
     'LinkResolution',
     'LinkIdentify',
     'Login',
-    'SearchCommunity'
-    'UserInfo'
+    'MembershipConfig',
+    'MembershipInfo',
+    'PushNotification',
+    'SearchCommunity',
+    'SearchQuiz',
+    'SearchUser',
+    'UserInfo',
+    'VerifyPassword',
+    'Wallet',
+    'WalletAds',
+    'WalletHistory'
 )
 
 
@@ -117,7 +134,14 @@ class HTTPResponse:
 
     def ok(self) -> bool:
         """Check if the response has statuscode `0`."""
-        return self.api.statuscode
+        return self.api.statuscode == 0
+
+
+class FromDevice(HTTPResponse):
+    @cached_property
+    def auid(self) -> str:
+        """Amino user id."""
+        return self.json.get('auid')
 
 
 class AccountInfo(HTTPResponse):
@@ -135,13 +159,13 @@ class CommunityInfo(HTTPResponse):
 
 
 class UserInfo(HTTPResponse):
-    """Represent the user profile.
+    """Represents a user profile.
 
     Attributes
     ----------
-    json: :class:`dict`
+    json : :class:`dict`
         The raw API data.
-    user: :class:`UserProfile`
+    user : :class:`UserProfile`
         User profile.
 
     """
@@ -151,26 +175,26 @@ class UserInfo(HTTPResponse):
         return objects.UserProfile(self.json.get('userProfile') or {})
 
 
+class ChatInfo(HTTPResponse):
+    """Represents a chat thread response.
+
+    Attributes
+    ----------
+    json : :class:`dict`
+        The raw API data.
+    chat : :class:`Thread`
+        Chat thread info.
+
+    """
+    @cached_property
+    def chat(self) -> objects.Thread:
+        return objects.Thread(self.json.get('thread') or {})
+
+
 class CommunityInfluencers(HTTPResponse):
     @cached_property
     def user(self) -> objects.UserProfileList:
         return objects.UserProfileList(self.json.get('userProfileList') or {})
-
-    @cached_property
-    def monthlyFee(self) -> List[int]:
-        return self.user.influencer.monthlyFee
-
-    @cached_property
-    def nickname(self) -> List[str]:
-        return self.user.nickname
-
-    @cached_property
-    def fansCount(self) -> List[int]:
-        return self.user.influencer.fansCount
-
-    @cached_property
-    def id(self) -> List[str]:
-        return self.user.id
 
 
 class LinkResolution(HTTPResponse):
@@ -247,6 +271,89 @@ class LinkIdentify(HTTPResponse):
         return self.json.get('path')
 
 
+class ChatMembers(HTTPResponse):
+    @cached_property
+    def members(self) -> objects.MemberList:
+        return objects.MemberList(self.json.get('memberList') or [])
+
+
+class PushNotification(HTTPResponse):
+    @cached_property
+    def enabled(self) -> bool:
+        """Push enabled."""
+        return self.json.get('pushEnabled')
+
+    @cached_property
+    def extensions(self) -> objects.PushExtensions:
+        """Global/Community notification config."""
+        return objects.PushExtensions(self.json.get('pushExtensions') or {})
+
+
+class MembershipInfo(HTTPResponse):
+    @cached_property
+    def enabled(self) -> bool:
+        """Account membership enabled."""
+        return self.json.get('accountMembershipEnabled')
+
+    @cached_property
+    def hasAnyAppleSubscription(self) -> bool:
+        return self.json.get('hasAnyAppleSubscription')
+
+    @cached_property
+    def hasAnyAndroidSubscription(self) -> bool:
+        return self.json.get('hasAnyAndroidSubscription')
+
+    @cached_property
+    def premiumEnabled(self) -> bool:
+        return self.json.get('premiumFeatureEnabled')
+
+    @cached_property
+    def membership(self) -> objects.Membership:
+        """User account membership object."""
+        return objects.Membership(self.json.get('membership') or {})
+
+
+class MembershipConfig(HTTPResponse):
+    @cached_property
+    def membership(self) -> objects.Membership:
+        """User account membership."""
+        return objects.Membership(self.json.get('membership') or {})
+
+
+class WalletAds(HTTPResponse):
+    @cached_property
+    def coinsEarned(self) -> objects.CoinsEarnedByAds:
+        return objects.CoinsEarnedByAds(self.json.get('coinsEarnedByAds') or {})
+
+    @cached_property
+    def estimatedCoinsEarned(self) -> float:
+        return self.json.get('estimatedCoinsEarnedByAds')
+
+
+class WalletInfo(HTTPResponse):
+    @cached_property
+    def wallet(self) -> objects.Wallet:
+        return objects.Wallet(self.json.get('wallet') or {})
+
+
+class WalletHistory(HTTPResponse):
+    @cached_property
+    def history(self) -> objects.CoinHistoryList:
+        """Coin history list."""
+        return objects.CoinHistoryList(self.json.get('coinHistoryList') or [])
+
+
+class AllPushSettings(HTTPResponse):
+    @cached_property
+    def settings(self) -> objects.PushSettings:
+        """Represents the push settings for all joined communities."""
+        return objects.PushSettings(self.json.get('pushSettings') or [])
+
+
+class VerifyPassword(HTTPResponse):
+    pass
+
+
 class Login(HTTPResponse):
     @cached_property
     def account(self) -> objects.Account:
@@ -308,3 +415,31 @@ class SearchCommunity(HTTPResponse):
     @cached_property
     def userJoinedCommunityList(self) -> list:
         return self.json.get('userJoinedCommunityList') or []
+
+
+class SearchQuiz(HTTPResponse):
+    @cached_property
+    def communities(self) -> objects.CommunityInfoMapping:
+        return objects.CommunityInfoMapping(self.json.get('communityInfoMapping') or {})
+
+    @cached_property
+    def paging(self) -> objects.Paging:
+        return objects.Paging(self.json.get('paging') or {})
+
+    @cached_property
+    def posts(self):
+        return objects.PostList(self.json.get('postList') or [])
+
+    @cached_property
+    def numberOfJoinedCommunities(self) -> int:
+        return self.json.get('numberOfJoinedCommunities') or 0
+
+
+class SearchUser(HTTPResponse):
+    @cached_property
+    def user(self) -> objects.UserProfileList:
+        return objects.UserProfileList(self.json.get('userProfileList') or [])
+
+    @cached_property
+    def usersCount(self) -> int:
+        return self.json.get('userProfileCount') or 0

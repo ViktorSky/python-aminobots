@@ -1,89 +1,22 @@
-from typing import (
-    Any,
-    Optional,
-    Protocol
-)
-import logging
+"""MIT License
 
-__all__ = (
-    'ABCAminoBot',
-    'ABCBot',
-    'ABCManagerBot'
-)
+Copyright (c) 2022 ViktorSky
 
-DEFAULT_LOGGER = logging.getLogger('__name__')
-DEFAULT_LOGGER.setLevel(logging.DEBUG)
-DEFAULT_STREM = logging.StreamHandler()
-DEFAULT_STREM.setFormatter(logging.Formatter(
-    fmt='%(levelname)s: %(message)s'
-))
-DEFAULT_LOGGER.addHandler(DEFAULT_STREM)
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-class ABCBotBase(Protocol):
-    __slots__ = ()
-
-    info: dict
-    logger: logging.Logger
-
-    @property
-    def name(self) -> str:
-        """bot name."""
-        return self.info.get('name')
-
-    @name.setter
-    def name(self, value: Any) -> None:
-        if not isinstance(value, Optional[str]):
-            raise TypeError('expected str not %r.' % value.__class__.__name__)
-        self.info.update(name=value)
-
-    @property
-    def description(self) -> str:
-        return self.info.get('description')
-
-    @description.setter
-    def description(self, value: Any) -> None:
-        if not isinstance(value, Optional[str]):
-            raise TypeError('expected str not %r.' % value.__class__.__name__)
-        self.info.update(description=value)
-
-    @property
-    def prefix(self) -> str:
-        return self.info.get('prefix')
-
-    @prefix.setter
-    def prefix(self, value: Any) -> None:
-        if not isinstance(value, str):
-            raise TypeError('expected str not %r.' % value.__class__.__name__)
-        self.info.update(prefix=value)
-
-    async def on_ready(self):
-        self.logger.warning('on_ready event was ignored.')
-
-    def command(self):
-        raise NotImplementedError
-
-    def event(self):
-        raise NotImplementedError
-
-    async def start(self):
-        raise NotImplementedError
-
-    def run(self):
-        raise NotImplementedError
-
-
-class ABCManagerBot(ABCBotBase):
-    ...
-
-
-class ABCAminoBot(ABCBotBase):
-    ...
-
-
-class ABCBot(ABCBotBase):
-    ...
-
-
-class ABCCommand(Protocol):
-    ...
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""

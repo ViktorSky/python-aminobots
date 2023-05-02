@@ -20,12 +20,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
+from functools import cached_property
 from dataclasses import dataclass
 from typing import List, Literal, Optional, Tuple
-from functools import cached_property
-from .account import DeviceInfo
-from .communitylist import CommunityList
+from . import account
+from . import communitylist
+
+
 
 __all__ = ('UserProfile',)
 
@@ -64,6 +65,10 @@ class Media:
 
     """
     json: list
+
+    @cached_property
+    def type(self) -> List[int]:
+        return [m[0] if m else None for m in self.json]
 
     @cached_property
     def url(self) -> List[str]:
@@ -188,8 +193,8 @@ class Extensions:
         return self.json.get("defaultBubbleId")
 
     @cached_property
-    def deviceInfo(self) -> DeviceInfo:
-        return DeviceInfo(self.json.get("deviceInfo") or {})
+    def deviceInfo(self) -> account.DeviceInfo:
+        return account.DeviceInfo(self.json.get("deviceInfo") or {})
 
     # @cached_property
     # def disabledLevel(self):
@@ -311,29 +316,25 @@ class UserProfile:
 
     Attributes
     ----------
-    json: :class:`dict`
+    json : :class:`dict`
         The raw API data.
-    acccountMembershipStatus: :class:`int`
+    acccountMembershipStatus : :class:`int`
         ...
-    acpDeeplink: Optional[:class:`str`]
+    acpDeeplink : Optional[:class:`str`]
         ...
-    adminLogCountIn7Days: Optional[:class:`int`]
+    adminLogCountIn7Days : Optional[:class:`int`]
         ...
-    aminoId: :class:`str`
+    aminoId : :class:`str`
         ...
-    avatar: :class:`AvatarFrame`
-        Avatar Frame object.
-    avatarId: :classs:`str`
-        Avatar Frame id.
-    background: :class:`BackgroundMedia`
+    background : :class:`BackgroundMedia`
         User background.
-    backgroundColor: Optional[:class:`str`]
+    backgroundColor : Optional[:class:`str`]
         Hex color string.
-    bio: Optional[:class:`str`]
+    bio : Optional[:class:`str`]
         User bio.
-    blogsCount: :class:`int`
+    blogsCount : :class:`int`
         User blogs count.
-    comId: Optional[:class:`int`]
+    communityId: Optional[:class:`int`]
         Profile community id.
     commentsCount: :class:`int`
         Comments count.
@@ -355,6 +356,10 @@ class UserProfile:
         Followings count.
     followingStatus: Literal[`0`, `1`]
         ...
+    frame: :class:`AvatarFrame`
+        Avatar Frame object.
+    frameId: :classs:`str`
+        Avatar Frame id.
     icon: :class:`str`
         User icon url.
     id: :class:`str`
@@ -436,14 +441,14 @@ class UserProfile:
         # return self.json.get("aminoIdEditable")
 
     @cached_property
-    def avatar(self) -> AvatarFrame:
+    def frame(self) -> AvatarFrame:
         """Avatar Frame object."""
         return AvatarFrame(self.json.get("avatarFrame") or {})
 
     @cached_property
-    def avatarId(self):
+    def frameId(self):
         """Avatar frame id."""
-        return self.json.get("avatarFrameId") or self.avatarFrame.id
+        return self.json.get("avatarFrameId") or self.frame.id
 
     @cached_property
     def background(self) -> BackgroundMedia:
@@ -466,7 +471,7 @@ class UserProfile:
         return self.json.get("blogsCount")
 
     @cached_property
-    def comId(self) -> Optional[int]:
+    def communityId(self) -> Optional[int]:
         """Profile community id."""
         return self.json.get("ndcId") or None
 
@@ -491,7 +496,7 @@ class UserProfile:
         return self.extensions.defaultBubbleId
 
     @cached_property
-    def deviceInfo(self) -> DeviceInfo:
+    def deviceInfo(self) -> account.DeviceInfo:
         return self.extensions.deviceInfo
 
     @cached_property
@@ -531,8 +536,8 @@ class UserProfile:
         return self.json.get("level")
 
     @cached_property
-    def linkedCommunities(self) -> CommunityList:
-        return CommunityList(self.json.get("linkedCommunityList") or {})
+    def linkedCommunities(self) -> communitylist.CommunityList:
+        return communitylist.CommunityList(self.json.get("linkedCommunityList") or {})
 
     @cached_property
     def media(self) -> Media:
@@ -641,3 +646,73 @@ class UserProfile:
     def wikisCount(self) -> int:
         """Wikis count."""
         return self.json.get("itemsCount")
+
+
+@dataclass(repr=False)
+class Author:
+    json: dict
+
+    @cached_property
+    def accountMembershipStatus(self) -> int:
+        return self.json.get('accountMembershipStatus')
+
+    @cached_property
+    def communityId(self) -> int:
+        return self.json.get('ndcId')
+
+    @cached_property
+    def followersCount(self) -> int:
+        return self.json.get('membersCount')
+
+    @cached_property
+    def followingStatus(self) -> int:
+        return self.json.get('followingStatus')
+
+    @cached_property
+    def frame(self) -> AvatarFrame:
+        return AvatarFrame(self.json.get('avatarFrame') or {})
+
+    @cached_property
+    def frameId(self) -> str:
+        return self.json.get('avatarFrameId')
+
+    @cached_property
+    def icon(self) -> str:
+        return self.json.get('icon')
+
+    @cached_property
+    def id(self) -> str:
+        """User id."""
+        return self.json.get('uid')
+
+    @cached_property
+    def isGlobal(self) -> bool:
+        return self.json.get('isGlobal')
+
+    @cached_property
+    def level(self) -> int:
+        return self.json.get('level')
+
+    @cached_property
+    def membershipStatus(self) -> int:
+        return self.json.get('membershipStatus')
+
+    @cached_property
+    def nickname(self) -> str:
+        return self.json.get('nickname')
+
+    @cached_property
+    def nicknameVerified(self) -> bool:
+        return self.json.get('isNicknameVerified')
+
+    @cached_property
+    def reputation(self) -> int:
+        return self.json.get('reputation')
+
+    @cached_property
+    def role(self) -> int:
+        return self.json.get('role')
+
+    @cached_property
+    def status(self) -> int:
+        return self.json.get('status')

@@ -24,7 +24,7 @@ SOFTWARE.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
-
+from .utils import copy_all_docs
 from .abc import ABCRTCClient
 
 if TYPE_CHECKING:
@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 __all__ = ('RTCClient',)
 
 
+@copy_all_docs
 class RTCClient(ABCRTCClient):
     amino: Amino
 

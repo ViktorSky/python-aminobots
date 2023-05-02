@@ -20,11 +20,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import dataclasses
+from dataclasses import dataclass
+from functools import cached_property
+from typing import Optional
+from .community import Community
+from .communitylist import CommunityList
 
-__all__ = ('UserInfoInJoinedCommunities',)
+__all__ = ('CommunityInfoMapping',)
 
 
-@dataclasses.dataclass(repr=False)
-class UserInfoInJoinedCommunities:
+@dataclass(repr=False)
+class CommunityInfoMapping:
     json: dict
+
+    def __getitem__(self, item: int) -> Community:
+        return Community(self.json[str(item)])
+
+    def get(self, communityId: int) -> Optional[Community]:
+        return Community(self.json[str(communityId)]) if self.json.get(str(communityId)) else None
+
+    def communities(self) -> CommunityList:
+        return CommunityList(list(self.json.values()))

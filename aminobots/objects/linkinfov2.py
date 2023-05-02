@@ -20,18 +20,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
-from dataclasses import dataclass
-from typing import Optional
-from functools import cached_property
-from .community import Community
-from .currentuserinfo import CurrentUserInfo
-from .invitation import Invitation
+from . import community
+from . import currentuserinfo
+from . import invitation
+import dataclasses
+import functools
+import typing
 
 __all__ = ('LinkInfoV2',)
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class LinkInfo:
     """Represent the link info.
 
@@ -57,47 +56,47 @@ class LinkInfo:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def comId(self) -> int:
         """Community id."""
         return self.json.get("ndcId")
 
-    @cached_property
-    def fullPath(self) -> Optional[str]:
+    @functools.cached_property
+    def fullPath(self) -> typing.Optional[str]:
         return self.json.get("fullPath")
 
-    @cached_property
-    def fullUrl(self) -> Optional[str]:
+    @functools.cached_property
+    def fullUrl(self) -> typing.Optional[str]:
         """Full path url."""
         return self.json.get("shareURLFullPath")
 
-    @cached_property
+    @functools.cached_property
     def objectId(self) -> str:
         """Object id."""
         return self.json.get("objectId")
 
-    @cached_property
+    @functools.cached_property
     def objectType(self) -> int:
         """Object type."""
         return self.json.get("objectType")
 
-    @cached_property
-    def shortCode(self) -> Optional[str]:
+    @functools.cached_property
+    def shortCode(self) -> typing.Optional[str]:
         """Short code."""
         return self.json.get("shortCode")
 
-    @cached_property
-    def shortUrl(self) -> Optional[str]:
+    @functools.cached_property
+    def shortUrl(self) -> typing.Optional[str]:
         """Short path url."""
         return self.json.get("shareURLShortCode")
 
-    @cached_property
+    @functools.cached_property
     def targetCode(self) -> int:
         """Target code."""
         return self.json.get("targetCode")
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class Extensions:
     """Represent the Link info extensions.
 
@@ -123,43 +122,43 @@ class Extensions:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def comId(self) -> int:
         """Community id."""
         return self.linkInfo.comId or self.community.id
 
-    @cached_property
-    def community(self) -> Community:
+    @functools.cached_property
+    def community(self) -> community.Community:
         """Community object."""
-        return Community(self.json.get("community") or {})
+        return community.Community(self.json.get("community") or {})
 
-    @cached_property
-    def currentUser(self) -> CurrentUserInfo:
+    @functools.cached_property
+    def currentUser(self) -> currentuserinfo.CurrentUserInfo:
         """Current user profile in the community."""
-        return CurrentUserInfo(self.json.get('currentUserInfo') or {})
+        return currentuserinfo.CurrentUserInfo(self.json.get('currentUserInfo') or {})
 
-    @cached_property
-    def invitation(self) -> Invitation:
+    @functools.cached_property
+    def invitation(self) -> invitation.Invitation:
         """Community invitation object."""
-        return Invitation(self.json.get("invitation") or {})
+        return invitation.Invitation(self.json.get("invitation") or {})
 
-    @cached_property
-    def invitationId(self) -> Optional[str]:
+    @functools.cached_property
+    def invitationId(self) -> typing.Optional[str]:
         """Community invitation id."""
         return self.json.get("invitationId") or self.invitation.id
 
-    @cached_property
+    @functools.cached_property
     def linkInfo(self) -> LinkInfo:
         """Link info object."""
         return LinkInfo(self.json.get("linkInfo") or {})
 
-    @cached_property
+    @functools.cached_property
     def isCurrentUserJoined(self) -> bool:
         """Logged account is joined in the community."""
         return self.json.get('isCurrentUserJoined', False)
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class LinkInfoV2:
     """Represent the link information of Amino.
 
@@ -179,22 +178,22 @@ class LinkInfoV2:
     """
     json: dict
 
-    @cached_property
-    def community(self) -> Community:
+    @functools.cached_property
+    def community(self) -> community.Community:
         return self.extensions.community
 
-    @cached_property
+    @functools.cached_property
     def extensions(self) -> Extensions:
         return Extensions(self.json.get("extensions") or {})
 
-    @cached_property
-    def invitation(self) -> Invitation:
+    @functools.cached_property
+    def invitation(self) -> invitation.Invitation:
         return self.extensions.invitation
 
-    @cached_property
+    @functools.cached_property
     def linkInfo(self) -> LinkInfo:
         return self.extensions.linkInfo
 
-    @cached_property
+    @functools.cached_property
     def path(self) -> str:
         return self.json.get("path")

@@ -29,11 +29,13 @@ from typing import (
     Union
 )
 from .abc import ABCWSClient
-from .utils import signature
+from .utils import signature, copy_all_docs
 from . import errors
 from yarl import URL
+
 if TYPE_CHECKING:
     from .amino import Amino
+
 import aiohttp
 import asyncio
 import ujson
@@ -43,11 +45,11 @@ __all__ = ('WSClient',)
 CONNECTION_TRIES = 4
 
 
+@copy_all_docs
 class WSClient(ABCWSClient):
-    amino: Amino
     BASE: ClassVar[str] = 'wss://ws%d.narvii.com/'
-    s: Optional[aiohttp.ClientWebSocketResponse]
-    client: Optional[aiohttp.ClientWebSocketResponse]
+    amino: Amino
+    client: aiohttp.ClientWebSocketResponse
     reconnectTime: ClassVar[int] = 120
 
     def __init__(self, amino: Amino) -> None:
@@ -57,14 +59,14 @@ class WSClient(ABCWSClient):
     @property
     def closed(self) -> bool:
         """Websocket closed."""
-        return isinstance(self.s, aiohttp.ClientWebSocketResponse) and self.s.closed
+        return isinstance(self.client, aiohttp.ClientWebSocketResponse) and self.client.closed
 
     @staticmethod
     async def get_token(sid: str) -> Optional[str]:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    'https://aminoapps.com/api/chat/web-socket-url',
-                    headers=dict(cookie=f'sid={sid}')
+                'https://aminoapps.com/api/chat/web-socket-url',
+                headers=dict(cookie=f'sid={sid}')
             ) as response:
                 try:
                     token = (await response.json())['result']['url']
@@ -72,10 +74,7 @@ class WSClient(ABCWSClient):
                     token = None
                 return token
 
-    async def connect(
-        self,
-        token_url: Optional[str] = None
-    ) -> None:
+    async def connect(self, token_url: Optional[str] = None) -> None:
         session: aiohttp.ClientSession = None
         while self.amino.sid or token_url:
             params, headers = {}, {
@@ -98,8 +97,7 @@ class WSClient(ABCWSClient):
                         self.client = await session.ws_connect(
                             url, params=params,
                             headers=headers,
-                            proxy=self.amino.proxy,
-                            proxy_auth=self.amino.proxy_auth
+                            proxy=self.amino.proxy
                         )
                         break
                 self.amino.logger.info('websocket connected.')
@@ -121,6 +119,55 @@ class WSClient(ABCWSClient):
                 continue
             finally:
             #except asyncio.CancelledError:
+                await session.close()
+                await self.close()
+                return
+
+    async def connect(self, token_url: Optional[str] = None) -> None:
+        session: aiohttp.ClientSession = None
+        while self.amino.sid or token_url:
+            params, headers = {}, {
+                'NDCDEVICEID': self.amino.device,
+                'NDCAUTH': self.amino.sid,
+                'Content-Type': 'text/plain'
+            }
+            if not token_url:
+                timestamp = int(time.time() * 1000)
+                data = f'{self.amino.device}|{timestamp}'
+                headers.update({'NDC-MSG-SIG': signature(data)})
+                params.update(signbody=data)
+            try:
+                if not isinstance(session, aiohttp.ClientSession) or session.closed:
+                    session = aiohttp.ClientSession()
+                if not isinstance(self.client, aiohttp.ClientWebSocketResponse):
+                    for tries in range(1, CONNECTION_TRIES + 1):
+                        url = token_url or self.BASE % tries
+                        headers.update(HOST=URL(url).host)
+                        self.client = await session.ws_connect(
+                            url, params=params,
+                            headers=headers,
+                            proxy=self.amino.proxy
+                        )
+                        break
+                self.amino.logger.info('websocket connected.')
+                while True:
+                    msg = await self.client.receive()
+                    self.amino.logger.debug('ws receive: %r' % msg.type)
+                    if msg.type == aiohttp.WSMsgType.CLOSED:
+                        raise errors.WebSocketClosed
+                        #if msg.type == aiohttp.WSMsgType.TEXT:
+                    print(msg.type, msg.data)
+                        #loop = asyncio.get_running_loop()
+                        #loop.create_task(self.on_ws_message(msg))
+            except aiohttp.WSServerHandshakeError:
+                self.amino.logger.debug('websocket handshaking.')
+                await asyncio.sleep(1)
+                continue
+            except errors.WebSocketClosed:
+                self.amino.logger.info('websocket disconnected. Reconnecting in 5 seconds...')
+                await asyncio.sleep(5)  # wait for 5 minutes before trying to reconnect
+                continue
+            finally:
                 await session.close()
                 await self.close()
                 return

@@ -35,6 +35,7 @@ from . import (
     errors as errors,
     models as models,
     objects as objects,
+    models as models,
     utils as utils
 )
 

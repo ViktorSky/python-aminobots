@@ -20,16 +20,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
-from dataclasses import dataclass
-from functools import cached_property
-from typing import Optional
-from .userprofile import UserProfile
+from . import userprofile
+import dataclasses
+import functools
+import typing
 
 __all__ = ('ChatMessage',)
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class AvatarFrame:
     """Represent the author avatar frame.
 
@@ -53,36 +52,36 @@ class AvatarFrame:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def id(self) -> str:
         return self.json.get('frameId')
 
-    @cached_property
+    @functools.cached_property
     def icon(self) -> str:
         return self.json.get('icon')
 
-    @cached_property
+    @functools.cached_property
     def name(self) -> str:
         return self.json.get('name')
 
-    @cached_property
+    @functools.cached_property
     def status(self) -> int:
         return self.json.get('status')
 
-    @cached_property
+    @functools.cached_property
     def type(self) -> int:
         return self.json.get('frameType')
 
-    @cached_property
+    @functools.cached_property
     def url(self) -> str:
         return self.json.get('resourceUrl')
 
-    @cached_property
+    @functools.cached_property
     def version(self) -> int:
         return self.json.get('version')
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class Author:
     """Represent the message author.
 
@@ -112,44 +111,44 @@ class Author:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def accountMembershipStatus(self) -> int:
         return self.json.get('accountMembershipStatus', 0)
 
-    @cached_property
+    @functools.cached_property
     def avatarFrame(self) -> AvatarFrame:
         return AvatarFrame(self.json.get('avatarFrame') or dict())
 
-    @cached_property
+    @functools.cached_property
     def icon(self) -> str:
         return self.json.get('icon')
 
-    @cached_property
+    @functools.cached_property
     def id(self) -> str:
         return self.json.get('uid')
 
-    @cached_property
+    @functools.cached_property
     def level(self) -> int:
         return self.json.get('level')
 
-    @cached_property
+    @functools.cached_property
     def nickname(self) -> str:
         return self.json.get('nickname', 0)
 
-    @cached_property
+    @functools.cached_property
     def reputation(self) -> int:
         return self.json.get('reputation', 0)
 
-    @cached_property
+    @functools.cached_property
     def role(self) -> int:
         return self.json.get('role')
 
-    @cached_property
+    @functools.cached_property
     def status(self) -> int:
         return self.json.get('status')
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class StickerCollection:
     """Represent a Sticker Collection of Amino.
     
@@ -183,68 +182,68 @@ class StickerCollection:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def authorId(self) -> str:
         """User id."""
         return self.json.get('uid')
 
-    @cached_property
+    @functools.cached_property
     def banner(self) -> str:
         """Banner url."""
         return self.json.get('bannerUrl')
 
-    @cached_property
+    @functools.cached_property
     def createdTime(self) -> str:
         """Created date."""
         return self.json.get('createdTime')
 
-    @cached_property
+    @functools.cached_property
     def icon(self) -> str:
         """Collection icon url."""
         return self.json.get('icon')
 
-    @cached_property
+    @functools.cached_property
     def id(self) -> str:
         """Collection id."""
         return self.json.get('collectionId')
 
-    @cached_property
+    @functools.cached_property
     def modifiedTime(self) -> str:
         """Modified date."""
         return self.json.get('modifiedTime')
 
-    @cached_property
+    @functools.cached_property
     def name(self) -> str:
         """Collection name."""
         return self.json.get('name')
 
-    @cached_property
+    @functools.cached_property
     def smallIcon(self) -> str:
         """Small collection icon url."""
         return self.json.get('smallIcon')
 
-    @cached_property
+    @functools.cached_property
     def status(self) -> int:
         """Collection status."""
         return self.json.get('status')
 
-    @cached_property
+    @functools.cached_property
     def stickersCount(self) -> int:
         """Stickers count."""
         return self.json.get('stickersCount')
 
-    @cached_property
+    @functools.cached_property
     def type(self) -> int:
         """Collection type."""
         return self.json.get('collectionType')
 
-    @cached_property
+    @functools.cached_property
     def usedCount(self) -> int:
         """Used count."""
         return self.json.get('usedCount')
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class Sticker:
     """Represent a Sticker of Amino.
 
@@ -278,60 +277,60 @@ class Sticker:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def collection(self) -> StickerCollection:
         return StickerCollection(self.json.get('stickerCollectionSummary' or dict()))
 
-    @cached_property
+    @functools.cached_property
     def collectionId(self) -> str:
         return self.json.get('stickerCollectionId')
 
-    @cached_property
+    @functools.cached_property
     def createdTime(self) -> str:
         return self.json.get('createdTime')
 
-    @cached_property
+    @functools.cached_property
     def icon(self) -> str:
         return self.json.get('icon')
 
-    @cached_property
+    @functools.cached_property
     def iconV2(self) -> str:
         return self.json.get('iconV2')
 
-    @cached_property
+    @functools.cached_property
     def id(self) -> str:
         return self.json.get('stickerId')
 
-    @cached_property
+    @functools.cached_property
     def mediumIcon(self) -> str:
         return self.json.get('mediumIcon')
 
-    @cached_property
+    @functools.cached_property
     def mediumIconV2(self) -> str:
         return self.json.get('mediumIconV2')
 
-    @cached_property
+    @functools.cached_property
     def name(self) -> str:
         return self.json.ge('name')
 
-    @cached_property
+    @functools.cached_property
     def smallIcon(self) -> str:
         return self.json.get('smallIcon')
 
-    @cached_property
+    @functools.cached_property
     def smallIconV2(self) -> str:
         return self.json.get('smallIconV2')
 
-    @cached_property
+    @functools.cached_property
     def status(self) -> int:
         return self.json.get('status')
 
-    @cached_property
+    @functools.cached_property
     def usedCount(self) -> int:
         return self.json.get('usedCount')
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class Extensions:
     """Represent message extensions.
 
@@ -349,20 +348,20 @@ class Extensions:
     """
     json: dict
 
-    @cached_property
-    def duration(self) -> Optional[float]:
+    @functools.cached_property
+    def duration(self) -> typing.Optional[float]:
         return self.json.get('duration')
 
-    @cached_property
-    def originalStickerId(self) -> Optional[str]:
+    @functools.cached_property
+    def originalStickerId(self) -> typing.Optional[str]:
         return self.json.get('originalStickerId')
 
-    @cached_property
+    @functools.cached_property
     def sticker(self) -> Sticker:
         return Sticker(self.json.get('sticker') or dict())
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class ChatMessage:
     """Represent a chat message of Amino.
 
@@ -402,77 +401,77 @@ class ChatMessage:
     """
     json: dict
 
-    @cached_property
-    def author(self) -> UserProfile:
+    @functools.cached_property
+    def author(self) -> userprofile.UserProfile:
         """User profile."""
-        return UserProfile(self.json.get('author') or dict())
+        return userprofile.UserProfile(self.json.get('author') or dict())
 
-    @cached_property
+    @functools.cached_property
     def authorId(self) -> str:
         """User id."""
         return self.json.get('uid')
 
-    @cached_property
+    @functools.cached_property
     def chatId(self) -> str:
         """Chat id."""
         return self.json.get('threadId')
 
-    @cached_property
+    @functools.cached_property
     def clientRefId(self) -> int:
         """Ref id."""
         return self.json.get('clientRefId')
 
-    @cached_property
-    def content(self) -> Optional[str]:
+    @functools.cached_property
+    def content(self) -> typing.Optional[str]:
         """Text message."""
         return self.json.get('content')
 
-    @cached_property
+    @functools.cached_property
     def createdTime(self) -> str:
         """Create date."""
         return self.json.get('createdTime')
 
-    @cached_property
+    @functools.cached_property
     def extensions(self) -> Extensions:
         """Message extensions."""
         return Extensions(self.json.get('extensions') or dict())
 
-    @cached_property
+    @functools.cached_property
     def id(self) -> str:
         """Message id."""
         return self.json.get('messageId')
 
-    @cached_property
+    @functools.cached_property
     def includedInSummary(self) -> bool:
         """Included in summary."""
         return self.json.get('includedInSummary')
 
-    @cached_property
+    @functools.cached_property
     def isHidden(self) -> bool:
         """Is hidden message"""
         return self.json.get('isHidden')
 
-    @cached_property
-    def media(self) -> Optional[str]:
+    @functools.cached_property
+    def media(self) -> typing.Optional[str]:
         """Media url."""
         return self.json.get('mediaValue')
 
-    @cached_property
-    def mediaDuration(self) -> Optional[float]:
+    @functools.cached_property
+    def mediaDuration(self) -> typing.Optional[float]:
         """Audio duration."""
         return self.extensions.duration
 
-    @cached_property
+    @functools.cached_property
     def mediaType(self) -> int:
         """Media type."""
         return self.json.get('mediaType') or 0
 
-    @cached_property
+    @functools.cached_property
     def sticker(self) -> Sticker:
         """Sticker object."""
         return self.extensions.sticker
 
-    @cached_property
+    @functools.cached_property
     def type(self) -> int:
         """Message type."""
         return self.json.get('type')

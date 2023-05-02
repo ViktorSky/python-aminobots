@@ -20,16 +20,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from dataclasses import dataclass
-from functools import cached_property, cache
-from .userprofile import UserProfile
-from .userprofilelist import UserProfileList
-from typing import Any, List, Dict, Optional
+from . import userprofile
+from . import userprofilelist
+import dataclasses
+import functools
+import typing
 
 __all__ = ('UserInfoInCommunities',)
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class UserInfoInCommunities:
     """Represent the user profile in multiple communities.
 
@@ -69,96 +69,96 @@ class UserInfoInCommunities:
         Profile status.
 
     """
-    json: Dict[str, Dict[str, Any]]
+    json: typing.Dict[str, typing.Dict[str, typing.Any]]
 
-    @cache
-    def __getitem__(self, comId: int) -> UserProfile:
+    @functools.cache
+    def __getitem__(self, comId: int) -> userprofile.UserProfile:
         """User profile in one community."""
         profile = self.json[str(comId)]
-        return UserProfile(profile)
+        return userprofile.UserProfile(profile)
 
-    @cached_property
-    def accountMembershipStatus(self) -> List[int]:
+    @functools.cached_property
+    def accountMembershipStatus(self) -> typing.List[int]:
         """Account membership status."""
         return self.profile.accountMembershipStatus
 
-    @cached_property
-    def avatarId(self) -> List[str]:
+    @functools.cached_property
+    def avatarId(self) -> typing.List[str]:
         """User avatar frame ids."""
         return self.profile.avatarId
 
-    @cached_property
-    def comId(self) -> List[int]:
+    @functools.cached_property
+    def comId(self) -> typing.List[int]:
         """Community ids."""
         return self.profile.comId
 
-    @cached_property
-    def followersCount(self) -> List[int]:
+    @functools.cached_property
+    def followersCount(self) -> typing.List[int]:
         """Community user followers count."""
         return self.profile.followersCount
 
-    @cached_property
-    def followingsCount(self) -> List[int]:
+    @functools.cached_property
+    def followingsCount(self) -> typing.List[int]:
         """Community user followings count."""
         return self.profile.followingsCount
 
-    @cached_property
-    def followingStatus(self) -> int:
+    @functools.cached_property
+    def followingStatus(self) -> typing.List[int]:
         """Following this user."""
         return self.profile.followingStatus
 
-    @cached_property
-    def icon(self) -> List[str]:
+    @functools.cached_property
+    def icon(self) -> typing.List[str]:
         """Community user icon urls."""
         return self.profile.icon
 
-    @cached_property
-    def id(self) -> List[str]:
+    @functools.cached_property
+    def id(self) -> typing.List[str]:
         """All user ids."""
         return self.profile.id
 
-    @cached_property
-    def isGlobal(self) -> List[bool]:
+    @functools.cached_property
+    def isGlobal(self) -> typing.List[bool]:
         """Global or commmunity profile."""
         return self.profile.isGlobal
 
-    @cached_property
-    def level(self) -> List[Optional[int]]:
+    @functools.cached_property
+    def level(self) -> typing.List[typing.Optional[int]]:
         """All community user level."""
         return self.profile.level
 
-    @cached_property
-    def membershipStatus(self) -> List[int]:
+    @functools.cached_property
+    def membershipStatus(self) -> typing.List[int]:
         """Membership status."""
         return self.profile.membershipStatus
 
-    @cached_property
-    def nickname(self) -> List[str]:
+    @functools.cached_property
+    def nickname(self) -> typing.List[str]:
         """User nicknames."""
         return self.profile.nickname
 
-    @cached_property
-    def nicknameVerified(self) -> List[bool]:
+    @functools.cached_property
+    def nicknameVerified(self) -> typing.List[bool]:
         """Is nickname verified."""
         return self.profile.nicknameVerified
 
-    @cached_property
-    def profile(self) -> UserProfileList:
+    @functools.cached_property
+    def profile(self) -> userprofilelist.UserProfileList:
         """All user profiles."""
-        return UserProfileList([p.get('userProfile') or {} for p in self.json.values()])
+        return userprofilelist.UserProfileList([p.get('userProfile') or {} for p in self.json.values()])
 
-    @cached_property
-    def reputation(self) -> List[int]:
+    @functools.cached_property
+    def reputation(self) -> typing.List[int]:
         """Community user reputation."""
         return self.profile.reputation
 
-    @cached_property
-    def role(self) -> List[int]:
+    @functools.cached_property
+    def role(self) -> typing.List[int]:
         """Community user roles."""
         return self.profile.role
 
-    @cached_property
-    def status(self) -> List[int]:
+    @functools.cached_property
+    def status(self) -> typing.List[int]:
         """Profile status."""
         return self.profile.status
 

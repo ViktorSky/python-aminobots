@@ -20,19 +20,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
-from dataclasses import dataclass
-from functools import cached_property
-from typing import (
-    Literal,
-    Optional
-)
-from .communitylist import CommunityList
+from . import communitylist
+import dataclasses
+import functools
+import typing
 
 __all__ = ('Account',)
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class Ads:
     """Respreset a account ads info.
 
@@ -48,16 +44,16 @@ class Ads:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def lastPopupTime(self) -> str:
         return self.json.get("lastPopupTime")
 
-    @cached_property
+    @functools.cached_property
     def status(self) -> int:
         return self.json.get("status")
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class AdvancedSettings:
     """Represent the account advanced settings.
 
@@ -71,12 +67,12 @@ class AdvancedSettings:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def analyticsEnabled(self) -> int:
         return self.json.get("analyticsEnabled")
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class DeviceInfo:
     """Represent the account device info.
 
@@ -89,12 +85,12 @@ class DeviceInfo:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def lastClientType(self) -> int:
         return self.json.get("lastClientType")
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class PopupConfig:
     """Represent the PopupConfig
 
@@ -112,20 +108,20 @@ class PopupConfig:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def ads(self) -> Ads:
         return Ads(self.json.get("ads", {}))
 
-    @cached_property
+    @functools.cached_property
     def adsStatus(self):
         return self.ads.status
 
-    @cached_property
+    @functools.cached_property
     def lastAdsPopupTime(self):
         return self.ads.lastPopupTime
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class Extensions:
     """Represent account extensions.
 
@@ -153,40 +149,40 @@ class Extensions:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def adsEnabled(self) -> bool:
         return self.json.get("adsEnabled")
 
-    @cached_property
+    @functools.cached_property
     def adsFlags(self) -> int:
         return self.json.get("adsFlags")
 
-    @cached_property
+    @functools.cached_property
     def adsLevel(self) -> int:
         return self.json.get("adsLevel")
 
-    @cached_property
+    @functools.cached_property
     def avatarFrameId(self) -> str:
         return self.json.get("avatarFrameId")
 
-    @cached_property
+    @functools.cached_property
     def contentLanguage(self) -> str:
         return self.json.get("contentLanguage")
 
-    @cached_property
+    @functools.cached_property
     def deviceInfo(self) -> DeviceInfo:
         return DeviceInfo(self.json.get("deviceInfo", {}))
 
-    @cached_property
+    @functools.cached_property
     def mediaLabAdsMigrationAugust2020(self) -> bool:
         return self.json.get("mediaLabAdsMigrationAugust2020")
 
-    @cached_property
+    @functools.cached_property
     def popupConfig(self) -> PopupConfig:
         return PopupConfig(self.json.get("popupConfig", {}))
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class Account:
     """Represent a user account in Amino.
 
@@ -263,130 +259,130 @@ class Account:
 
     json: dict
 
-    @cached_property
-    def activation(self) -> Literal[0, 1]:
+    @functools.cached_property
+    def activation(self) -> typing.Literal[0, 1]:
         return self.json.get("activation")
 
-    @cached_property
+    @functools.cached_property
     def adsEnabled(self) -> bool:
         return self.extensions.adsEnabled
 
-    @cached_property
+    @functools.cached_property
     def advancedSettings(self) -> AdvancedSettings:
         return AdvancedSettings(self.json.get("advancedSettings", {}))
 
-    @cached_property
+    @functools.cached_property
     def aminoId(self) -> str:
         return self.json.get("aminoId")
 
-    @cached_property
+    @functools.cached_property
     def aminoIdEditable(self) -> bool:
         return self.json.get("aminoIdEditable")
 
-    @cached_property
-    def appleId(self) -> Optional[str]:
+    @functools.cached_property
+    def appleId(self) -> typing.Optional[str]:
         return self.json.get("appleID")
 
-    @cached_property
+    @functools.cached_property
     def avatarFrameId(self) -> str:
         return self.extensions.avatarFrameId
 
-    @cached_property
+    @functools.cached_property
     def contentLanguage(self) -> str:
         return self.extensions.contentLanguage
 
-    @cached_property
+    @functools.cached_property
     def createdTime(self) -> str:
         return self.json.get("createdTime")
 
-    @cached_property
-    def deviceId(self) -> Optional[str]:
+    @functools.cached_property
+    def deviceId(self) -> typing.Optional[str]:
         return self.json.get("deviceID")
 
-    @cached_property
+    @functools.cached_property
     def deviceInfo(self) -> DeviceInfo:
         return self.extensions.deviceInfo
 
-    @cached_property
-    def email(self) -> Optional[str]:
+    @functools.cached_property
+    def email(self) -> typing.Optional[str]:
         return self.json.get("email")
 
-    @cached_property
-    def emailActivation(self) -> Literal[0, 1]:
+    @functools.cached_property
+    def emailActivation(self) -> typing.Literal[0, 1]:
         return self.json.get("emailActivation")
 
-    @cached_property
+    @functools.cached_property
     def extensions(self) -> Extensions:
         return Extensions(self.json.get("extensions") or {})
 
-    @cached_property
-    def facebookId(self) -> Optional[str]:
+    @functools.cached_property
+    def facebookId(self) -> typing.Optional[str]:
         return self.json.get("facebookID")
 
-    @cached_property
-    def googleId(self) -> Optional[str]:
+    @functools.cached_property
+    def googleId(self) -> typing.Optional[str]:
         return self.json.get("googleID")
 
-    @cached_property
+    @functools.cached_property
     def icon(self) -> str:
         return self.json.get("icon")
 
-    @cached_property
-    def linkedCommunity(self) -> CommunityList:
-        return CommunityList(self.json.get("linkedCommunityList") or [])
+    @functools.cached_property
+    def linkedCommunity(self) -> communitylist.CommunityList:
+        return communitylist.CommunityList(self.json.get("linkedCommunityList") or [])
 
-    @cached_property
+    @functools.cached_property
     def mediaLabAdsMigrationAugust2020(self) -> bool:
         return self.extensions.mediaLabAdsMigrationAugust2020
 
-    @cached_property
+    @functools.cached_property
     def membership(self):  # ...
         return self.json.get("membership")
 
-    @cached_property
+    @functools.cached_property
     def mediaList(self):  # ...
         return self.json.get("mediaList")
 
-    @cached_property
+    @functools.cached_property
     def modifiedTime(self) -> str:
         return self.json.get("modifiedTime")
 
-    @cached_property
+    @functools.cached_property
     def nickname(self) -> str:
         return self.json.get("nickname")
 
-    @cached_property
-    def phone(self) -> Optional[str]:
+    @functools.cached_property
+    def phone(self) -> typing.Optional[str]:
         return self.json.get("phoneNumber")
 
-    @cached_property
-    def phoneActivation(self) -> Literal[0, 1]:
+    @functools.cached_property
+    def phoneActivation(self) -> typing.Literal[0, 1]:
         return self.json.get("phoneNumberActivation")
 
-    @cached_property
+    @functools.cached_property
     def popupConfig(self) -> PopupConfig:
         return self.extensions.popupConfig
 
-    @cached_property
+    @functools.cached_property
     def role(self) -> int:
         return self.json.get("role")
 
-    @cached_property
+    @functools.cached_property
     def securityLevel(self) -> int:  # (3,)
         return self.json.get("securityLevel")
 
-    @cached_property
-    def status(self) -> Literal[0, 1]:
+    @functools.cached_property
+    def status(self) -> typing.Literal[0, 1]:
         return self.json.get("status")
 
-    @cached_property
-    def twitterId(self) -> Optional[str]:
+    @functools.cached_property
+    def twitterId(self) -> typing.Optional[str]:
         return self.json.get("twitterID")
 
-    @cached_property
+    @functools.cached_property
     def userId(self) -> str:
         return self.json.get("uid")
 
-    @cached_property
+    @functools.cached_property
     def username(self) -> str:
         return self.json.get("username")

@@ -20,11 +20,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import dataclasses
+from dataclasses import dataclass
+from functools import cached_property
 
-__all__ = ('UserInfoInJoinedCommunities',)
+__all__ = ('CoinsEarnedByAds',)
 
 
-@dataclasses.dataclass(repr=False)
-class UserInfoInJoinedCommunities:
+class CoinsEarnedByAds:
+    """Represents the wallet coins earned by ads.
+
+    Attributes
+    ----------
+    json : :class:`dict`
+        The raw API data.
+    total : :class:`float`
+        Total coins earned by ads.
+    weekly :class:`float`
+        User weekly earnings.
+
+    """
     json: dict
+
+    @cached_property
+    def total(self) -> float:
+        return self.json.get('total')
+
+    @cached_property
+    def weekly(self) -> float:
+        return self.json.get('weekly')

@@ -20,13 +20,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from dataclasses import dataclass
-from functools import cached_property
+import dataclasses
+import functools
 
 __all__ = ('Payload',)
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class Aps:
     """Represent an Notification aps.
 
@@ -44,22 +44,22 @@ class Aps:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def alert(self) -> str:
         """Alert text."""
         return self.json.get('alert')
 
-    @cached_property
+    @functools.cached_property
     def badge(self) -> int:
         return self.json.get('badge')
 
-    @cached_property
+    @functools.cached_property
     def sound(self) -> str:
         """Original App sound identifier. (java)"""
         return self.json.get('sound')
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class Payload:
     """Represent the Payload of the web-socket message.
 
@@ -87,42 +87,42 @@ class Payload:
     """
     json: dict
 
-    @cached_property
+    @functools.cached_property
     def aps(self) -> Aps:
         """Alert aps."""
         return Aps(self.json.get('aps', dict()))
 
-    @cached_property
+    @functools.cached_property
     def chatId(self) -> str:
         """Chat id."""
         return self.json.get('tid')
 
-    @cached_property
+    @functools.cached_property
     def comId(self) -> str:
         """Community id."""
         return self.json.get('ndcId')
 
-    @cached_property
+    @functools.cached_property
     def createdTime(self) -> str:
         """Created date."""
         return self.json.get('ts')
 
-    @cached_property
+    @functools.cached_property
     def id(self) -> str:
         """Message id."""
         return self.json.get('id')
 
-    @cached_property
+    @functools.cached_property
     def isHidden(self) -> bool:
         """Is hidden message."""
         return self.json.get('isHidden')
 
-    @cached_property
+    @functools.cached_property
     def msgType(self) -> int:
         """Message type."""
         return self.json.get('msgType', 0)
 
-    @cached_property
+    @functools.cached_property
     def type(self) -> int:
         """Notification type."""
         return self.json.get('notifType', 0)

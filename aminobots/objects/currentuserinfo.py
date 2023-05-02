@@ -20,15 +20,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from dataclasses import dataclass
-from typing import Optional
-from functools import cached_property
-from .userprofile import UserProfile
+from . import userprofile
+import dataclasses
+import functools
+import typing
 
 __all__ = ('CurrentUserInfo',)
 
 
-@dataclass(repr=False)
+@dataclasses.dataclass(repr=False)
 class CurrentUserInfo:
     """Represent the current user logged.
 
@@ -60,52 +60,52 @@ class CurrentUserInfo:
     """
     json: dict
 
-    @cached_property
-    def bio(self) -> Optional[str]:
+    @functools.cached_property
+    def bio(self) -> typing.Optional[str]:
         """User bio."""
         return self.user.bio
 
-    @cached_property
+    @functools.cached_property
     def consecutiveCheckInDays(self) -> int:
         """Check-in days."""
         return self.user.consecutiveCheckInDays
 
-    @cached_property
+    @functools.cached_property
     def icon(self) -> str:
         """User icon url."""
         return self.user.icon
 
-    @cached_property
+    @functools.cached_property
     def id(self) -> str:
         """User id."""
         return self.user.id
 
-    @cached_property
+    @functools.cached_property
     def level(self) -> int:
         """Community user level."""
         return self.user.level
 
-    @cached_property
+    @functools.cached_property
     def nickname(self) -> str:
         """User nickname."""
         return self.user.nickname
 
-    @cached_property
+    @functools.cached_property
     def notificationsCount(self) -> int:
         """Notifications count."""
         return self.json.get('notificationsCount') or 0
 
-    @cached_property
+    @functools.cached_property
     def reputation(self) -> int:
         """Community user reputation."""
         return self.user.reputation
 
-    @cached_property
+    @functools.cached_property
     def role(self) -> int:
         """Community user role."""
         return self.user.role
 
-    @cached_property
-    def user(self) -> UserProfile:
+    @functools.cached_property
+    def user(self) -> userprofile.UserProfile:
         """User profile object."""
-        return UserProfile(self.json.get('userProfile') or {})
+        return userprofile.UserProfile(self.json.get('userProfile') or {})

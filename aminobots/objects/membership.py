@@ -20,11 +20,46 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import dataclasses
+from dataclasses import dataclass
+from functools import cached_property
+from typing import Literal
 
-__all__ = ('UserInfoInJoinedCommunities',)
+__all__ = ('Membership',)
 
 
-@dataclasses.dataclass(repr=False)
-class UserInfoInJoinedCommunities:
+@dataclass(repr=False)
+class Membership:
+    """Represets the user membership."""
     json: dict
+
+    @cached_property
+    def autoRenew(self) -> bool:
+        return self.json.get('isAutoRenew')
+
+    @cached_property
+    def createdTime(self) -> str:
+        return self.json.get('createdTime')
+
+    @cached_property
+    def expiredTime(self) -> str:
+        return self.json.get('expiredTime')
+
+    @cached_property
+    def modifiedTime(self) -> str:
+        return self.json.get('modifiedTime')
+
+    @cached_property
+    def paymentType(self) -> Literal[1, 2, 3, 4, 5]:
+        return self.json.get('paymentType')
+
+    @cached_property
+    def renewedTime(self) -> str:
+        return self.json.get('renewedTime')
+
+    @cached_property
+    def status(self) -> Literal[0, 1]:
+        return self.json.get('membershipStatus')
+
+    @cached_property
+    def userId(self) -> str:
+        return self.json.get('uid')

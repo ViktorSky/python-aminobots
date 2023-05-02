@@ -22,32 +22,47 @@ SOFTWARE.
 """
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Optional
+from typing import List
 
-__all__ = ('Paging',)
+__all__ = ('PushSettings',)
 
 
 @dataclass(repr=False)
-class Paging:
-    """Represent a Paging of Amino.
+class PushSettings:
+    """Represents the push settings for all joined communities.
 
     Attributes
     ----------
-    json: :class:`dict`
+    json : List[:class:`dict`]
         The raw API data.
-    nextPageToken: :class:`str`
-        Next Page token.
+    communityIds : List[:class:`int`]
+        Communities ids.
+    enabled : List[:class:`bool`]
+        Communities push notifications enabled.
+    icons : List[:class:`str`]
+        Communities icons.
+    names : List[:class:`str`]
+        Communities names.
 
     """
-
-    json: dict
-
-    @cached_property
-    def nextPageToken(self) -> str:
-        """Next page token."""
-        return self.json.get("nextPageToken")
+    json: List[dict]
 
     @cached_property
-    def prevPageToken(self) -> Optional[str]:
-        """Previous page token."""
-        return self.json.get("prevPageToken")
+    def communityIds(self) -> List[int]:
+        """Communities ids."""
+        return [com.get('ndc_id') for com in self.json]
+
+    @cached_property
+    def enabled(self) -> List[bool]:
+        """Communities push notifications enabled."""
+        return [com.get('pushEnabled') for com in self.json]
+
+    @cached_property
+    def icons(self) -> List[str]:
+        """Communities icons."""
+        return [com.get('icon') for com in self.json]
+
+    @cached_property
+    def names(self) -> List[str]:
+        """Communities names."""
+        return [com.get('name') for com in self.json]

@@ -34,27 +34,43 @@ __all__ = (
 
 
 class AminoException(Exception):
-    '''Base Exception class for python-aminobots.'''
+    """Base Exception class for python-aminobots."""
     ...
 
 # base classes
 class RediretionError(AminoException):
-    '''Base Exception class for HTTP requests. Raised when the HTTP response status >= 300.'''
-    ...
+    """Base Exception class for HTTP requests. Raised when the HTTP response status >= 300."""
+    status: int
+    reason: str
+    def __init__(self, status: int, reason: str) -> None:
+        super().__init__(status, reason)
+        self.status = status
+        self.reason = reason
+
+    def __str__(self) -> str:
+        return repr(f'{self.status} - {self.reason}')
 
 
 class ClientError(AminoException):
-    '''Base Exception class for HTTP requests. Raised when the HTTP response status >= 400.'''
-    ...
+    """Base Exception class for HTTP requests. Raised when the HTTP response status >= 400."""
+    status: int
+    reason: str
+    def __init__(self, status: int, reason: str) -> None:
+        super().__init__(status, reason)
+        self.status = status
+        self.reason = reason
+
+    def __str__(self) -> str:
+        return repr(f'{self.status} - {self.reason}')
 
 
 class ServerError(ClientError):
-    '''Base Exception class for HTTP requests. Raised when the HTTP response status >= 500.'''
+    """Base Exception class for HTTP requests. Raised when the HTTP response status >= 500."""
     ...
 
 
 class APIError(AminoException):
-    '''Exception that's raised when an HTTP API request operation fails.
+    """Exception that's raised when an HTTP API request operation fails.
 
     Attributes
     ------------
@@ -68,7 +84,7 @@ class APIError(AminoException):
         The duration of the API processing.
     timestamp: :class:`Date`
         The timestamp of the request.
-    '''
+    """
 
     __slots__ = (
         'duration',
@@ -89,7 +105,7 @@ class APIError(AminoException):
 
 # connection
 class ConnectionError(AminoException):
-    '''Exception that's raised when there is no connection.'''
+    """Exception that's raised when there is no connection."""
     ...
 
 
@@ -109,6 +125,62 @@ class Forbidden(ClientError):
 
 
 # frequent api errors
+class UnsupportedService(APIError):
+    """statuscode : `100`"""
+
+class InvalidRequest(APIError):
+    """statuscode : `104`"""
+
+class ActionNotAllowed(APIError):
+    """statuscode : `110`"""
+
+class IncorrectPassword(APIError):
+    """statuscode : `200`"""
+
+class InvalidEmailAddress(APIError):
+    """statuscode : `213`"""
+
+class InvalidPassword(APIError):
+    """statuscode : `214`"""
+
+class AccountNotExists(APIError):
+    """statuscode : `216`"""
+
+class TooManyRequests(APIError):
+    """statuscode : `219`"""
+
+class UserUnavailable(APIError):
+    """statuscode : `225`"""
+
 class CommunityDisabled(APIError):
-    # unused
-    """code: 814"""
+    """statuscode : `814`"""
+
+class MembershipRequired(APIError):
+    """statuscode : `4200`"""
+
+class LotteryPlayed(APIError):
+    """statuscode : `4400`"""
+
+class TopicNotExists(APIError):
+    """statuscode : `5101`"""
+
+
+def check_api_error(api: dict) -> APIError:
+    statuscode: int = api.get('api:statuscode')
+    error: APIError = {
+        100: UnsupportedService,
+        104: InvalidRequest,
+        110: ActionNotAllowed,
+        200: IncorrectPassword,
+        213: InvalidEmailAddress,
+        214: InvalidPassword,
+        216: AccountNotExists,
+        219: TooManyRequests,
+        225: UserUnavailable,
+        814: CommunityDisabled,
+        4200: MembershipRequired,
+        4400: LotteryPlayed,
+        5101: TopicNotExists
+    }.get(statuscode, APIError)
+
+    return error(api)

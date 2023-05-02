@@ -23,7 +23,7 @@ SOFTWARE.
 
 from typing import Optional, Union
 from .abc import ABCACM
-from .utils import Device
+from .utils import Device, copy_all_docs
 from .http import HTTPClient
 from .ws import WSClient
 from .enums import ClientType
@@ -31,7 +31,8 @@ from .enums import ClientType
 __all__ = ('ACM',)
 
 
-class ACM:
+@copy_all_docs
+class ACM(ABCACM):
     """Represent the Amino Community Manager app.
 
     Attributes
