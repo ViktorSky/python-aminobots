@@ -20,24 +20,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import logging
 from typing import Optional, Union
+import datetime
+import logging
+from pydantic import HttpUrl
 
-from .http import HTTPClient
-from .ws import WSClient
-from .rtc import RTCClient
-from .abc import ABCAmino
-from .enums import ClientType, Language, PaymentType, ValidationType, ValidationLevel
-from .utils import copy_all_docs, Device, SID
 from . import (
+    abc,
+    enums,
+    http,
     models,
     objects,
+    rtc,
+    ws,
     utils
 )
 
 __all__ = ('Amino',)
 
-DEFAULT_LOGGER = logging.getLogger('Amino')
+
+DEFAULT_LOGGER = logging.getLogger(__name__)
 DEFAULT_LOGGER.setLevel(logging.WARNING)
 DEFAULT_HANDLER = logging.StreamHandler()
 DEFAULT_HANDLER.setLevel(logging.WARNING)
@@ -47,21 +49,21 @@ DEFAULT_HANDLER.setFormatter(logging.Formatter(
 DEFAULT_LOGGER.addHandler(DEFAULT_HANDLER)
 
 
-@copy_all_docs
-class Amino(ABCAmino):
+@utils.copy_all_docs
+class Amino(abc.ABCAmino):
     """Represent the Amino client.
 
     Parameters
     ----------
-    device : Union[:class:`str`, :class:`Device`], optional
+    device : :class:`str` | :class:`Device` | `None`
         The NDC device to use for the client. If `None`, a new device will be generated. 
-    proxy : :class:`str`, optional
+    proxy : :class:`str` | `None`
         The HTTP or HTTPS proxy to use for the client. If not specified, no proxy will be used.
-    language : :class:`Language`, optional
+    language : :class:`Language` | `None`
         The content language to use for Amino. Default is :attr:`Language.ENGLISH`.
-    utc : `int`, optional
+    utc : `int` | `None`
         The UTC timezone offset for the client in hours. Default is `0`.
-    raiseExceptions : :class:`bool`, optional
+    raiseExceptions : :class:`bool` | `None`
         Whether to raise exceptions when errors occur. Default is `True`.
 
     Attributes
@@ -104,64 +106,65 @@ class Amino(ABCAmino):
 
     """
     #  instance vars
-    http: HTTPClient
-    rtc: RTCClient
-    ws: WSClient
+    http: 'http.HTTPClient'
+    rtc: 'rtc.RTCClient'
+    ws: 'ws.WSClient'
     account: objects.Account
     user: objects.UserProfile
     logger: logging.Logger
 
     #  changeable settings
-    _device: Device
+    _device: utils.Device
     timeout: Optional[int]
     utc: int
-    language: Language
+    language: enums.Language
     proxy: Optional[str]
     raiseExceptions: bool
 
     #  session vars
     auid: Optional[str]
-    _sid: Optional[SID]
+    _sid: Optional[utils.SID]
     secret: Optional[str]
 
     @property
-    def device(self) -> Device:
+    def device(self) -> utils.Device:
         """The device being used by the client."""
         return self._device
 
     @device.setter
-    def device(self, value: Union[str, Device]) -> None:
-        if not isinstance(value, Union[str, Device]):
+    def device(self, value: Union[str, utils.Device]) -> None:
+        if not isinstance(value, (str, utils.Device)):
             raise TypeError('expected str or Device, not %r.' % type(value).__name__)
         elif isinstance(value, str):
-            value = Device(value)
+            value = utils.Device(value)
         self._device = value
 
     @property
-    def sid(self) -> SID:
+    def sid(self) -> utils.SID:
         """The session ID for the Amino client."""
         return self._sid
 
     @sid.setter
-    def sid(self, value: Union[str, SID, None]) -> None:
-        if not isinstance(value, Union[str, SID, None]):
+    def sid(self, value: Union[str, utils.SID, None]) -> None:
+        if not isinstance(value, Union[str, utils.SID, None]):
             raise TypeError('expected str, SID or None, not %r.' % type(value).__name__)
         elif isinstance(value, str):
-            value = SID(value)
+            value = utils.SID(value)
         self._sid = value
 
     def __init__(
         self,
-        device: Optional[Union[str, Device]] = None,
+        device: Optional[Union[str, utils.Device]] = None,
         proxy: Optional[str] = None,
         *,
         logger: logging.Logger = DEFAULT_LOGGER,
-        language: Language = Language.ENGLISH,
+        language: enums.Language = enums.Language.ENGLISH,
         utc: int = 0,
         timeout: Optional[int] = None,
         raiseExceptions: bool = True,
+        **kwargs
     ) -> None:
-        if not isinstance(device, Optional[Union[str, Device]]):
+        if not isinstance(device, Optional[Union[str, utils.Device]]):
             raise TypeError(
                 'device argument must be a string or Device object, not %r.' % type(device).__name__)
         if not isinstance(logger, logging.Logger):
@@ -175,18 +178,18 @@ class Amino(ABCAmino):
                 'utc argument must be a integer not %r.' % type(utc).__name__)
         if utc not in range(-12, 15):
             raise ValueError('utc argument must be between -12 and 14.')
-        if not isinstance(language, Language):
+        if not isinstance(language, enums.Language):
             raise TypeError(
                 'language argument must be a Language object not %r.' % type(language).__name__)
         if not isinstance(timeout, Optional[int]):
             raise TypeError(
                 'timeout argument must be a integer not %r.' % type(timeout).__name__)
-        self.ws = WSClient(self)
-        self.http = HTTPClient(self)
-        self.rtc = RTCClient(self)
-        self.account = objects.Account(dict())
-        self.user = objects.UserProfile(dict())
-        self.device = device or Device()
+        self.ws = ws.WSClient(self)
+        self.http = http.HTTPClient(self, kwargs.pop('user_agent', None))
+        self.rtc = rtc.RTCClient(self)
+        self.account = objects.Account.construct()
+        self.user = objects.UserProfile.construct()
+        self.device = device or utils.device_gen()
         self.logger = logger
         self.proxy = proxy
         self.utc = utc
@@ -202,118 +205,137 @@ class Amino(ABCAmino):
         """Timezone for amino http parameters."""
         return self.utc * 60
 
-    async def update(self) -> None:
+    @utils.typechecker
+    async def update(self, user: objects.UserProfile = None, account: objects.Account = None) -> None:
         """Update the amino object."""
         if self.sid:
-            self.account = (await self.get_account_info()).account
-            self.user = (await self.get_user_info(self.user.id or self.sid.objectId)).user
+            self.account = account if isinstance(account, objects.Account) else (await self.get_account_info()).account
+            self.user = user if isinstance(user, objects.UserProfile) else (await self.get_user_info(self.user.id or self.sid.objectId)).user
         else:
-            self.account = objects.Account({})
-            self.user = objects.UserProfile({})
+            self.account = account if isinstance(account, objects.Account) else objects.Account({})
+            self.user = user if isinstance(user, objects.UserProfile) else objects.UserProfile({})
 
-    async def get_from_link(self, link: str, /) -> models.LinkResolution:
-        return models.LinkResolution(await self.http.get('link-resolution', dict(q=link)))
+    @utils.typechecker
+    async def get_from_link(self, link: Union[str, HttpUrl], /) -> models.LinkResolution:
+        return models.parse_model(models.LinkResolution, await self.http.get('link-resolution', dict(q=link)))
 
-    async def get_from_device(self, device: Union[str, Device], /) -> models.FromDevice:
-        return models.FromDevice(await self.http.get('auid', dict(deviceId=device)))
+    @utils.typechecker
+    async def get_from_device(self, device: Union[str, utils.Device], /) -> models.FromDevice:
+        return models.parse_model(models.FromDevice, await self.http.get('auid', dict(deviceId=device)))
 
+    @utils.typechecker
     async def get_link_info(self, link: str, /) -> models.LinkIdentify:
-        return models.LinkIdentify(await self.http.get('community/link-identify', dict(q=link)))
+        return models.parse_model(models.LinkIdentify, await self.http.get('community/link-identify', dict(q=link)))
 
+    @utils.typechecker
     async def get_ads_info(self) -> models.WalletAds:
-        return models.WalletAds(await self.http.get('wallet/setting/ads')) # timezone
+        return models.parse_model(models.WalletAds, await self.http.get('wallet/setting/ads', dict(timezone=self.timezone)))
 
+    @utils.typechecker
     async def get_user_info(self, id: str, /, cid: Optional[int] = None) -> models.UserInfo:
-        return models.UserInfo(await self.http.get(f'user-profile/{id}', cid=cid))
+        return models.parse_model(models.UserInfo, await self.http.get(f'user-profile/{id}', cid=cid))
 
+    @utils.typechecker
     async def get_account_info(self) -> models.AccountInfo:
-        return models.AccountInfo(await self.http.get('account'))
+        return models.parse_model(models.AccountInfo, await self.http.get('account'))
 
+    @utils.typechecker
     async def get_chat_info(self, id: str, /, cid: Optional[int] = None) -> models.ChatInfo:
-        return models.ChatInfo(await self.http.get(f'chat/thread/{id}', cid=cid))
+        return models.parse_model(models.ChatInfo, await self.http.get(f'chat/thread/{id}', cid=cid))
 
-    async def get_chat_members(self, id: str, /, start: int = 0, size: int = 25, cid: Optional[int] = None):
-        return models.ChatMembers(await self.http.get(f'chat/thread/{id}/member', dict(start=start, size=size, type='default', cv='1.2'), cid=cid))
+    @utils.typechecker
+    async def get_chat_members(self, id: str, /, start: int = 0, size: int = 25, cid: Optional[int] = None) -> models.ChatMembers:
+        return models.parse_model(models.ChatMembers, await self.http.get(f'chat/thread/{id}/member',
+            dict(start=start, size=size, type='default', cv='1.2'), cid=cid))
 
+    @utils.typechecker
     async def get_community_info(self, id: int, /) -> models.CommunityInfo:
-        return models.CommunityInfo(await self.http.get('community/info', dict(withInfluencerList=1, withTopicList='true', influencerListOrderStrategy='fansCount'), scopeCid=id))
+        return models.parse_model(models.CommunityInfo, await self.http.get('community/info',
+            dict(withInfluencerList=1, withTopicList='true', influencerListOrderStrategy='fansCount'), scopeCid=id))
 
     async def get_community_trending(self, cid: int, /):
         return await self.http.get('community/trending', cid=cid)
 
+    @utils.typechecker
     async def get_wallet_info(self) -> models.WalletInfo:
-        return models.WalletInfo(await self.http.get('wallet'), dict(force=True)) # timezone
+        return models.parse_model(models.WalletInfo, await self.http.get('wallet'), dict(force=True))
 
+    @utils.typechecker
     async def get_wallet_history(self, start: int = 0, size: int = 25) -> models.WalletHistory:
-        return models.WalletHistory(await self.http.get('wallet/coin/history', dict(start=start, size=size)))
+        return models.parse_model(models.WalletHistory, await self.http.get('wallet/coin/history', dict(start=start, size=size)))
 
+    @utils.typechecker
     async def get_account_push_settings(self) -> models.AllPushSettings:
-        return models.AllPushSettings(await self.http.get('account/push-settings'))
+        return models.parse_model(models.AllPushSettings, await self.http.get('account/push-settings'))
 
+    @utils.typechecker
     async def get_push_settings(self, cid: int = 0) -> models.PushNotification:
-        return models.PushNotification(await self.http.get('user-profile/push', cid=cid))
+        return models.parse_model(models.PushNotification, await self.http.get('user-profile/push', cid=cid))
 
+    @utils.typechecker
     async def set_push_settings(self, activities: bool, broadcasts: bool, cid: int = 0) -> models.PushNotification:
-        return models.PushNotification(await self.http.post('user-profile/push', dict(
-            pushEnabled=bool(activities or broadcasts),
+        return models.parse_model(models.PushNotification, await self.http.post('user-profile/push', dict(
             pushExtensions=dict(
                 **dict(communityBroadcastsEnabled=broadcasts) if broadcasts else {},
                 **dict(communityActivitiesEnabled=activities) if activities else {},
-                #systemEnabled=enable
-            )
+            ), pushEnabled=bool(activities or broadcasts)
         ), cid=cid))
 
     async def get_membership_info(self) -> models.MembershipInfo:
-        return models.MembershipInfo(await self.http.get('membership'))
+        return models.parse_model(models.MembershipInfo, await self.http.get('membership'))
 
+    @utils.typechecker
     async def configure_membership(self, autoRenew: bool) -> models.MembershipConfig:
-        return models.MembershipConfig(await self.http.post('membership/config', dict(
-            paymentType=PaymentType.COIN.value,
-            paymentContext=dict(
-                isAutoRenew=autoRenew
-            )
-        )))
+        return models.parse_model(models.MembershipConfig, await self.http.post('membership/config', dict(
+            paymentType=enums.PaymentType.COIN, paymentContext=dict(isAutoRenew=autoRenew))))
 
-    async def joined_chats(self, cid: int = 0, start: int = 0, size: int = 25):
-        return await self.http.get('chat/thread', dict(type='joined-me', start=start, size=size), cid=cid)
+    @utils.typechecker
+    async def joined_chats(self, cid: int = 0, start: int = 0, size: int = 25) -> models.JoinedChats:
+        return models.parse_model(models.JoinedChats, await self.http.get('chat/thread', dict(type='joined-me', start=start, size=size), cid=cid))
 
+    @utils.typechecker
     async def joined_communities(self, start: int = 0, size: int = 25) -> models.JoinedCommunities:
-        return models.JoinedCommunities(await self.http.get('community/joined', dict(v=1, start=start, size=size)))
+        return models.parse_model(models.JoinedCommunities, await self.http.get('community/joined', dict(v=1, start=start, size=size)))
 
+    @utils.typechecker
     async def get_vip_users(self, cid: int, /) -> models.CommunityInfluencers:
-        return models.CommunityInfluencers(await self.http.get('influencer', cid=cid))
+        return models.parse_model(models.CommunityInfluencers, await self.http.get('influencer', cid=cid))
 
+    @utils.typechecker
     async def search_user(self, q: str, /, cid: Optional[int] = None) -> models.SearchUser:
-        return models.SearchUser(await self.http.get('user-profile', dict(q=q, timezone=self.timezone, type='name'), cid=cid))
+        return models.parse_model(models.SearchUser, await self.http.get('user-profile', dict(q=q, timezone=self.timezone, type='name'), cid=cid))
 
-    async def search_community(self, q: str, /, language: Language = Language.ALL) -> models.SearchCommunity:
-        return models.SearchCommunity(await self.http.get('community/search', dict(q=q, timezone=self.timezone, language=language.value)))
+    @utils.typechecker
+    async def search_community(self, q: str, /, language: enums.Language = enums.Language.ALL) -> models.SearchCommunity:
+        return models.parse_model(models.SearchCommunity, await self.http.get('community/search', dict(q=q, timezone=self.timezone, language=language.value)))
 
-    async def search_chat(self, q: str, cid: Optional[int] = None):
-        return await self.http.get('chat/thread/explore/search', dict(q=q, timezone=self.timezone), cid=cid)
+    @utils.typechecker
+    async def search_chat(self, q: str, cid: Optional[int] = None, pageToken: str = None):
+        return await self.http.get('chat/thread/explore/search', dict(q=q, timezone=self.timezone, pageToken=pageToken), cid=cid)
 
+    @utils.typechecker
     async def search_quiz(self, q: str, /, cid: Optional[int] = None) -> models.SearchQuiz:
-        return models.SearchQuiz(await self.http.get('post/search', dict(q=q, timezone=self.timezone), cid=cid))
+        return models.parse_model(models.SearchQuiz, await self.http.get('post/search', dict(q=q, timezone=self.timezone), cid=cid))
 
+    @utils.typechecker
     async def login(self, email: str, password: str = None, secret: str = None) -> models.Login:
         if self.raiseExceptions and (not password and not secret):
             raise ValueError('Password or secret can\'t be empty.')
-        response = models.Login(await self.http.post('auth/login', dict(
-            clientType=ClientType.MASTER.value,
+        response = models.parse_model(models.Login, await self.http.post('auth/login', dict(
+            clientType=enums.ClientType.MASTER,
             action="normal",
             email=email,
             secret=f"0 {password}" if password else secret,
             v=2
         )))
-        if response.ok():
+        if response.ok:
             self.auid = response.auid
             self.secret = response.secret
             self.sid = response.sid
-            self.account.json.update(response.account.json)
-            self.user.json.update(response.user.json)
-            await self.update()
+            await self.update(response.user, response.account)
         return response
 
+    @utils.typechecker
     async def login_phone(
         self,
         phone: str,
@@ -323,7 +345,7 @@ class Amino(ABCAmino):
         if self.raiseExceptions and (not password and not secret):
             raise ValueError('Password or secret can\'t be empty.')
         response = models.Login(await self.http.post('auth/login', dict(
-            clientType=ClientType.MASTER.value,
+            clientType=enums.ClientType.MASTER,
             action="normal",
             phoneNumber=phone,
             secret=f"0 {password}" if password else secret,
@@ -333,37 +355,46 @@ class Amino(ABCAmino):
             self.auid = response.auid
             self.secret = response.secret
             self.sid = response.sid
-            self.account.json.update(response.account.json)
-            self.user.json.update(response.user.json)
             await self.update()
         return response
 
-    async def login_sid(self, sid: Union[str, SID]) -> None:
+    @utils.typechecker
+    async def login_sid(self, sid: Union[str, utils.SID]) -> None:
         self.sid = sid
-        account = await self.get_account_info()
-        user = await self.get_user_info(self.sid.objectId)
-        self.account.json.clear()
-        self.user.json.clear()
-        self.account.json.update(account.json)
-        self.user.json.update(user.json)
         await self.update()
 
     async def logout(self):
-        self.auid = None
-        self.secret = None
-        self.sid = None
-        self.account.json.clear()
-        self.user.json.clear()
+        self.auid = self.secret = self.sid = None
+        await self.update()
 
+    @utils.typechecker
+    async def set_activity(self, status: enums.ConnectionStatus):
+        return await self.http.post(f'user-profile/{self.user.id}/online-status', dict(
+            onlineStatus=status,
+            duration=86400
+        ))
+
+    @utils.typechecker
+    async def compose_eligible_check(self, type: enums.ObjectType, subType: enums.ObjectType = None):
+        # com.narvii.util.j.java <public void `c`>
+        return await self.http.post(f'user-profile/{self.user.id}/compose-eligible-check', dict(
+            objectType=type,
+            **dict(objectSubtype=subType) if subType else {}
+        ))
+
+    @utils.typechecker
     async def check_in(self, cid: int):
         return await self.http.post('check-in', dict(), cid=cid)
 
+    @utils.typechecker
     async def play_lottery(self, cid: int):
         return await self.http.post('check-in/lottery', dict(), cid=cid)
 
-    async def set_birthday(self, date: utils.Date):
+    @utils.typechecker
+    async def set_birthday(self, date: datetime.datetime):
         return await self.http.post('persona/profile/birthday', dict(birthday=date))
 
+    @utils.typechecker
     async def check_register(self, email: Optional[str] = None, phone: Optional[str] = None):
         return await self.http.post('auth/register-check', dict(
             identity=email or phone,
@@ -373,23 +404,25 @@ class Amino(ABCAmino):
     async def request_verify_code(self):
         return await self.http.post('', dict())
 
+    @utils.typechecker
     async def verify(self, vcode: str, email: str = None, phone: str = None):
         return await self.http.post('auth/check-security-validation', dict(
             validationContext=dict(
-                type=ValidationType.EMAIL.value if email else ValidationType.GLOBAL_SMS.value,
+                type=enums.ValidationType.EMAIL if email else enums.ValidationType.GLOBAL_SMS,
                 identity=email or phone,
-                level=ValidationLevel.IDENTITY.value if email else ValidationLevel.SECRET.value,
+                level=enums.ValidationLevel.IDENTITY if email else enums.ValidationLevel.SECRET,
                 data=dict(code=vcode)
             )
         ))
 
     async def verify_password(self, password: Optional[str] = None, secret: Optional[str] = None) -> models.VerifyPassword:
-        return models.VerifyPassword(await self.http.post('auth/verify-password', dict(secret=f'0 {password}' if password else secret, deviceID=self.device)))
+        return models.parse_model(models.VerifyPassword, await self.http.post('auth/verify-password',
+            dict(secret=f'0 {password}' if password else secret, deviceID=self.device)))
 
     async def activate_email(self, vcode: str, email: Optional[str] = None, phone: Optional[str] = None):
         return await self.http.post('activate-email', dict(
-            level=ValidationLevel.IDENTITY.value,
-            type=ValidationType.EMAIL.value if email else ValidationType.GLOBAL_SMS.value,
+            level=enums.ValidationLevel.IDENTITY,
+            type=enums.ValidationType.EMAIL if email else enums.ValidationType.GLOBAL_SMS,
             identity=email if email else phone,
             data=dict(code=vcode)
         ))
@@ -400,15 +433,15 @@ class Amino(ABCAmino):
                 secret=f'0 {password}' if password else secret,
                 identity=new_email,
                 data=dict(code=vcode),
-                level=ValidationLevel.IDENTITY.value,
-                type=ValidationType.EMAIL.value,
+                level=enums.ValidationLevel.IDENTITY,
+                type=enums.ValidationType.EMAIL,
                 deviceID=self.device
             ),
             oldValidationContext=dict(
                 identity=self.account.email,
-                level=ValidationLevel.IDENTITY.value,
+                level=enums.ValidationLevel.IDENTITY,
                 data=dict(code=vcode),
-                type=ValidationType.EMAIL.value,
+                type=enums.ValidationType.EMAIL,
                 deviceID=self.device
             )
         ))
@@ -419,15 +452,15 @@ class Amino(ABCAmino):
                 secret=f'0 {password}' if password else secret,
                 identity=phone,
                 data=dict(code=vcode),
-                level=ValidationLevel.IDENTITY.value,
-                type=ValidationType.GLOBAL_SMS.value,
+                level=enums.ValidationLevel.IDENTITY,
+                type=enums.ValidationType.GLOBAL_SMS,
                 deviceID=self.device
             ),
             oldValidationContext=dict(
                 identity=self.account.phone,
                 data=dict(code=vcode),
-                level=ValidationLevel.IDENTITY.value,
-                type=ValidationType.GLOBAL_SMS.value,
+                level=enums.ValidationLevel.IDENTITY,
+                type=enums.ValidationType.GLOBAL_SMS,
                 deviceID=self.device
             )
         ))
@@ -438,7 +471,7 @@ class Amino(ABCAmino):
     async def edit_profile(self, nickname: str = None, bio: str = None, medias: utils.MediaList = None):
         ...
 
-    async def get_bussiness_history(self):
+    async def get_bussiness_wallet_history(self):
         return await self.http.get('wallet/business-coin/history')
 
     async def watch_ads(self):
@@ -451,6 +484,9 @@ class Amino(ABCAmino):
         # com.narvii.wallet.j1.java (onStart)
         return await self.http.get('membership/latest-payment-context')
 
+    async def get_paid_log_info(self, paidOutId: str):
+        return await self.http.get(f'wallet/paid-out-log/{paidOutId}', dict())
+
     async def get_paid_logs(self):
         # unsupported service
         return await self.http.post('wallet/paid-out-log', dict())
@@ -461,22 +497,22 @@ class Amino(ABCAmino):
     async def buy_membership_by_coins(self, packName: str):
         # com.narvii.wallet.j1.java
         return await self.http.post('membership/product/v2', dict(
-            paymentType=PaymentType.COIN.value,
+            paymentType=enums.PaymentType.COIN.value,
             packageName=packName
         ))
 
-    async def pre_subscribe(self):
+    async def pre_subscribe(self, productId: str):
         # com.narvii.wallet.j1.java
         return await self.http.post('membership/product/pre-subscribe', dict(
-            sku='purchase.skus',
-            packageName=None,
-            paymentType=PaymentType.ANDROID_SUBSCRIPTION.value
+            sku=productId,
+            packageName='',
+            paymentType=enums.PaymentType.IOS_SUBSCRIPTION
         ))
 
     async def subscribe(self, packName: str):
         # com.narvii.wallet.j1.java
         return await self.http.post('membership/product/v2', dict(
-            paymentType=PaymentType.ANDROID_SUBSCRIPTION.value,
+            paymentType=enums.PaymentType.ANDROID_SUBSCRIPTION.value,
             packageName=packName,
             packageVersion=2
         ))
@@ -486,7 +522,7 @@ class Amino(ABCAmino):
         return await self.http.post('membership/product/subscribe', dict(
             sku=None,
             packageName=pname,
-            paymentType=PaymentType.ANDROID_SUBSCRIPTION.value,
+            paymentType=enums.PaymentType.ANDROID_SUBSCRIPTION.value,
             paymentContext=dict(
                 isAutoRenew=autoRenew
             ) # i0.d(hVar.d())
@@ -495,7 +531,7 @@ class Amino(ABCAmino):
     async def purchase_master(self):
         # unsupported service
         return await self.http.post('wallet/product/master', dict(
-            paymentType=PaymentType.ANDROID_PURCHASE.value
+            paymentType=enums.PaymentType.ANDROID_PURCHASE.value
         ))
 
     async def fetch_topic_header(self, id: int, cid: int = 0):

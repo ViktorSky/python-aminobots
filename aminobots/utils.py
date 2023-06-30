@@ -20,25 +20,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from dataclasses import dataclass, field
-from typing_extensions import Self
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Final,
-    Sequence,
-    Tuple,
-    Union
-)
-from collections.abc import Sequence
-from hashlib import sha1
-from base64 import b64encode, urlsafe_b64decode
-from functools import cached_property
+import typing_extensions
+import collections.abc
+import urllib.parse
+import dataclasses
+import functools
+import warnings
 import datetime
+import inspect
+import hashlib
+import typing
+import base64
 import ujson
 import hmac
 import time
@@ -50,232 +42,92 @@ from . import enums
 
 __all__ = (
     'active_time',
+    'build_url',
     'copy_doc',
     'copy_all_docs',
-    'Date',
     'Device',
     'device_gen',
+    'find_urls',
+    'Link',
+    'match_arguments',
     'Media',
     'MediaList',
     'MISSING',
+    'parse_annotations',
+    'parse_time',
     'SID',
     'signature',
     'suppress',
-    'find_urls',
+    'typechecker',
 )
 
-PREFIX: Final[str] = '19'
-DEVKEY: Final[str] = 'E7309ECC0953C6FA60005B2765F99DBBC965C8E9'
-SIGKEY: Final[str] = 'DFA5ED192DDA6E88A12FE12130DC6206B1251E44'
+PREFIX = '19'
+DEVKEY = 'E7309ECC0953C6FA60005B2765F99DBBC965C8E9'
+SIGKEY = 'DFA5ED192DDA6E88A12FE12130DC6206B1251E44'
+
+FMT_TIME = '%Y-%m-%dT%H:%M:%SZ'
 
 
-class _Missing:
-    __slots__ = ()
+if not typing.TYPE_CHECKING:
+    class _Missing:
+        __slots__ = ()
 
-    def __eq__(self, o: object) -> bool:
-        return False
+        def __eq__(self, o: object) -> bool:
+            return False
 
-    def __bool__(self) -> bool:
-        return False
+        def __bool__(self) -> bool:
+            return False
 
-    def __repr__(self) -> str:
-        return '...'
+        def __repr__(self) -> str:
+            return '...'
 
-    def __hash__(self) -> int:
-        return 0
+        def __hash__(self) -> int:
+            return 0
+    MISSING = _Missing()
+else:
+    MISSING: typing.Any = object()
 
 
-MISSING: Any = _Missing()
-
-def itersplit(array: Sequence[Any], count: int) -> List[Sequence[Any]]:
-    """Split iterables
+def itersplit(array: collections.abc.Sequence, groups: int) -> typing.List[collections.abc.Sequence]:
+    """Split iterables into a specific number of groups.
 
     Examples
     --------
     ```
     >>> my_list = tuple(range(17))
-    >>> itersplit(my_list, count=5)
+    >>> itersplit(my_list, groups=5)
     [(0, 5, 10, 15), (1, 6, 11, 16), (2, 7, 12), (3, 8, 13), (4, 9, 14)]
     ```
     """
-    return [array[i::count] for i in range(count)]
+    return [array[i::groups] for i in range(groups)]
 
 
-class Date(str):
-    """Represent a Amino API date format.
+@typing.overload
+def parse_time(timestamp: None, /) -> None:
+    ...
 
-    Parameters
-    ----------
-    timestamp : Optional[:class:`str`]
-        The timestamp format string.
+@typing.overload
+def parse_time(timestamp: str, /) -> datetime.datetime:
+    ...
 
-    Attributes
-    ----------
-    year : int
-    month : int
-    day : int
-    hour : int
-    minute : int
-    second : int
-    time
-    date
+@typing.overload
+def parse_time(timestamp: typing.Optional[str], /) -> typing.Optional[datetime.datetime]:
+    ...
 
-    """
-    fmt = '%Y-%m-%dT%H:%M:%SZ'
-
-    def __init__(self, timestamp: Optional[str] = None) -> None:
-        if timestamp:
-            self.dt = datetime.datetime.strptime(timestamp, self.fmt)
-        else:
-            self.dt = datetime.datetime.now()
-
-    def __new__(cls, timestamp: Optional[str] = None):
-        return str.__new__(cls, timestamp)
-
-    @cached_property
-    def year(self) -> int:
-        return self.dt.year
-
-    @cached_property
-    def month(self) -> int:
-        return self.dt.month
-
-    @cached_property
-    def day(self) -> int:
-        return self.dt.day
-
-    @cached_property
-    def hour(self) -> int:
-        return self.dt.hour
-
-    @cached_property
-    def minute(self) -> int:
-        return self.dt.minute
-
-    @cached_property
-    def second(self) -> int:
-        return self.dt.second
-
-    @cached_property
-    def time(self) -> datetime.time:
-        """To datetime.time"""
-        return self.dt.time()
-
-    @cached_property
-    def date(self) -> datetime.date:
-        """To datetime.date"""
-        return self.dt.date()
-
-    def __str__(self) -> str:
-        return self.dt.strftime(self.fmt)
-
-    def __repr__(self) -> str:
-        return '{!s}({!r})'.format(self.__class__.__name__, str(self))
-
-
-class Device(str):
-    """Represents an Amino Device
-
-    Parameters
-    ----------
-    device : :class:`str` | `None`
-        Amino device.
-
-    """
-    def __new__(cls, device: Optional[str] = None) -> Self:
-        if device is None:
-            device = device_gen()
-        elif isinstance(device, str):
-            device = update_device(device)
-        return str.__new__(cls, device.upper())
-
-    @cached_property
-    def id(self) -> bytes:
-        """device identifier."""
-        return bytes.fromhex(self)[1:21]
-
-
-def device_gen(id: bytes = None) -> str:
-    info: bytes = bytes.fromhex(PREFIX) + (id or os.urandom(20))
-    device: bytes = info + hmac.new(
-        bytes.fromhex(DEVKEY),
-        info, sha1
-    ).digest()
-    return device.hex()
-
-
-def update_device(device: Union[str, Device]) -> str:
-    return device_gen(bytes.fromhex(device)[1:21])
-
-
-class SID(str):
-    """Represent the user sid.
-
-    Attributes
-    ----------
-    version : int
-    key : str
-    ip_address
-    objectId
-    objectType
-    prefix: str
-    timestamp
-    clientType
-
-    """
-
-    def __init__(self, sid: str) -> None:
-        try:
-            decoded: bytes = urlsafe_b64decode(
-                sid + "=" * (4 - len(sid) % 4)
-            )
-            data: dict = ujson.loads(decoded[1:-20].decode("utf-8"))
-        except (TypeError, UnicodeDecodeError, ujson.JSONDecodeError) as exc:
-            raise ValueError('invalid sid.') from exc
-        else:
-            self.json: dict = data
-            self.key = decoded[-20:].hex()
-            self.prefix = decoded[:2].hex()
-
-    def __new__(cls, sid: str):
-        return str.__new__(cls, sid)
-
-    @cached_property
-    def version(self) -> int:
-        return self.json['0']
-
-    @cached_property
-    def null(self):
-        return self.json['1']
-
-    @cached_property
-    def objectId(self) -> str:
-        return self.json['2']
-
-    @cached_property
-    def objectType(self) -> int:
-        return self.json['3']
-
-    @cached_property
-    def ip_address(self) -> str:
-        return self.json['4']
-
-    @cached_property
-    def timestamp(self) -> int:
-        return self.json['5']
-
-    @cached_property
-    def clientType(self) -> int:
-        return self.json['6']
+def parse_time(timestamp: typing.Optional[str], /) -> typing.Optional[datetime.datetime]:
+    """Convert API timestamp string to :class:`datetime.datetime` object."""
+    if isinstance(timestamp, str) and timestamp:
+        return datetime.datetime.strptime(timestamp, FMT_TIME)
 
 
 class suppress:
     """Basic contextlib.suppress compatible with async/await"""
 
-    __slots__ = ('exc_type',)
+    __slots__ = ('exc_type', '__dict__')
 
     def __init__(self, exc_type) -> None:
-        self.exc_type = exc_type
+        if not typing.TYPE_CHECKING:
+            self.exc_type = exc_type
 
     def __enter__(self) -> None:
         pass
@@ -292,31 +144,210 @@ class suppress:
             or issubclass(exc_type, self.exc_type)
 
 
-def signature(data: str) -> str:
-    """Signature Generator.
+class SID(str):
+    """Represents the session ID of the user.
 
     Parameters
     ----------
-    data: str
+    sid : :class:`str`
+        The user sid string.
+
+    Attributes
+    ----------
+    version : int
+    key : str
+    ip_address
+    objectId
+    objectType
+    prefix: str
+    timestamp
+    clientType
+
+    """
+
+    json: dict
+    key: str
+    prefix: str
+    version: int
+    null: typing.Any
+    objectId: str
+    objectType = int
+    ip_address: str
+    timestamp: int
+    clientType: int
+
+    def __new__(cls, sid: str, /):
+        try:
+            decoded: bytes = base64.urlsafe_b64decode(
+                sid + "=" * (4 - len(sid) % 4)
+            )
+            data: dict = ujson.loads(decoded[1:-20].decode("utf-8"))
+        except (TypeError, UnicodeDecodeError, ujson.JSONDecodeError) as exc:
+            raise ValueError('invalid sid.') from exc
+        else:
+            self = str.__new__(cls, sid)
+        self.json = data
+        self.key = decoded[-20:].hex()
+        self.prefix = decoded[:2].hex()
+        self.version = self.json['0']
+        self.null = self.json['1']
+        self.objectId = self.json['2']
+        self.objectType = self.json['3']
+        self.ip_address = self.json['4']
+        self.timestamp = self.json['5']
+        self.clientType = self.json['6']
+        return self
+
+
+class Device(str):
+    """Represents an Amino Device.
+
+    Parameters
+    ----------
+    device : :class:`str`
+        The Amino device string.
+
+    Attributes
+    ----------
+    id : `bytes`
+        The device ID in bytes.
+
+    """
+
+    def __new__(cls, device: typing.Union[str, typing_extensions.Self], /) -> typing_extensions.Self:
+        if isinstance(device, Device):
+            return device
+        elif not isinstance(device, str):
+            raise TypeError('device must be a integer not %r' % type(device).__name__)
+        elif len(device) != 82:
+            raise ValueError('Invalid device.')
+        try:
+            bytes.fromhex(device) # type ignore
+        except Exception:
+            raise ValueError('invalid device.')
+        return str.__new__(cls, device.upper())
+
+    @functools.cached_property
+    def id(self) -> bytes:
+        """device identifier."""
+        return bytes.fromhex(self)[1:21]
+
+
+@typing.overload
+def device_gen(id: None) -> Device:
+    ...
+
+@typing.overload
+def device_gen(id: bytes) -> Device:
+    ...
+
+@typing.overload
+def device_gen(id: typing.Optional[bytes]) -> Device:
+    ...
+
+def device_gen(id: typing.Optional[bytes] = None) -> Device:
+    """Generate an Amino device.
+
+    Parameters
+    ----------
+    id : `bytes` | `None`
+        The device ID in bytes.
+
+    """
+    info: bytes = bytes.fromhex(PREFIX) + (id or os.urandom(20))
+    device: bytes = info + hmac.new(
+        bytes.fromhex(DEVKEY),
+        info, hashlib.sha1
+    ).digest()
+    return Device(device.hex())
+
+
+def update_device(device: typing.Union[str, Device], /) -> Device:
+    return device_gen(bytes.fromhex(device)[1:21])
+
+
+def signature(data: str) -> str:
+    """Amino signature generator.
+
+    Parameters
+    ----------
+    data : :class:`str`
         The data to encode.
 
     """
-    return b64encode(
+    info: bytes = data.encode("utf-8")
+    return base64.b64encode(
         bytes.fromhex(PREFIX) + hmac.new(
             bytes.fromhex(SIGKEY),
-            data.encode("utf-8"),
-            sha1
+            info, hashlib.sha1
         ).digest()
     ).decode("utf-8")
 
 
-def copy_doc(doc: Union[Callable, str]) -> Callable:
+def build_url(path: str, *, fragment: typing.Optional[str] = None, **params: typing.Any) -> str:
+    base = urllib.parse.urlparse(path)
+    query = urllib.parse.urlencode(dict(urllib.parse.parse_qsl(base.query), **params), quote_via=urllib.parse.quote_plus)
+    return urllib.parse.urlunparse([
+        base.scheme, base.netloc, base.path,
+        base.params, query, base.fragment
+    ])
+
+
+def parse_annotations(func) -> typing.Dict[str, type]:
+    function = inspect.signature(func)
+    annotations: typing.Dict[str, type] = {}
+    for name, parameter in function.parameters.items():
+        annotations[name] = parameter.annotation if parameter.annotation is not parameter.empty else MISSING
+    return annotations
+
+
+def match_arguments(func, *args, **kwargs) -> typing.OrderedDict[str, typing.Any]:
+    arguments = inspect.signature(func).bind(*args, **kwargs)
+    arguments.apply_defaults()
+    return arguments.arguments
+
+
+def typechecker(func):
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        annotations = parse_annotations(func)
+        arguments = match_arguments(func, *args, **kwargs)
+        for name, value in arguments.items():
+            if annotations[name] is MISSING:
+                continue
+            if not isinstance(value, annotations[name]):
+                raise TypeError('%r argument must be %r type not %r.' % (name, annotations[name].__qualname__, type(value).__name__))
+        return func(*args, **kwargs)
+    inner.__doc__ = func.__doc__
+    inner.__signature__ = inspect.signature(func)
+    return inner
+
+
+def deprecated(instead: typing.Optional[str] = None) -> typing.Callable[[typing.Callable], typing.Callable]:
+    """Set deprecated functions without altering operation by decoration."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            warnings.simplefilter('always', DeprecationWarning)  # turn off filter
+            if instead:
+                fmt = "{0.__name__} is deprecated, use {1} instead."
+            else:
+                fmt = '{0.__name__} is deprecated.'
+            warnings.warn(fmt.format(func, instead), stacklevel=3, category=DeprecationWarning)
+            warnings.simplefilter('default', DeprecationWarning)  # reset filter
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+
+def copy_doc(original):
     """Copy docstring. (decorator)
 
     Parameters
     ----------
-    doc: Union[str, Callable]
-        the docstring or any object with docstring.
+    original : :class:`Callable`
+        Any object with docstring.
     
     Returns
     -------
@@ -324,13 +355,12 @@ def copy_doc(doc: Union[Callable, str]) -> Callable:
         The object that changed the docstring.
 
     """
-    def decorator(obj: Callable) -> Any:
-        if not isinstance(doc, str):
-            obj.__doc__: str = doc.__doc__
-        else:
-            obj.__doc__: str = str(doc)
-        return obj
+    def decorator(overridden):
+        overridden.__doc__: str = original.__doc__
+        overridden.__signature__ = inspect.signature(overridden)  # type ignore
+        return overridden
     return decorator
+
 
 def copy_all_docs(cls):
     """Decorator that copies docstrings from an abstract base class to a concrete class.
@@ -342,13 +372,14 @@ def copy_all_docs(cls):
 
     Parameters
     ----------
-    cls : type
+    cls : :class:`type`
         The concrete class to be decorated.
 
     Returns
     -------
     type
         The decorated concrete class with copied docstrings.
+
     """
     for name, member in cls.__dict__.items():
         if not member.__doc__:
@@ -359,12 +390,13 @@ def copy_all_docs(cls):
                     break
     return cls
 
-def find_urls(text: str) -> List[str]:
+
+def find_urls(text: str) -> typing.List[str]:
     url_pattern = re.compile(r'((http[s]?|ndc):\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+#]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)')
     return [url[0] for url in re.findall(url_pattern, text)]
 
 
-def active_time(seconds=0, minutes=0, hours=0) -> List[Dict[str, int]]:
+def active_time(seconds=0, minutes=0, hours=0) -> typing.List[typing.Dict[str, int]]:
     total = seconds + minutes*60 + hours*60*60
     return [
         {
@@ -379,9 +411,7 @@ def active_time(seconds=0, minutes=0, hours=0) -> List[Dict[str, int]]:
     ]
 
 
-
-
-@dataclass(unsafe_hash=True, frozen=True, slots=True)
+@dataclasses.dataclass(unsafe_hash=True, frozen=True, slots=True)
 class Link:
     """Represents a link for the content of posts, chat messages, etc.
 
@@ -402,8 +432,8 @@ class Link:
         The alias link.
 
     """
-    url: str = field(hash=True)
-    alias: Optional[str] = field(default=None, hash=True)
+    url: str = dataclasses.field(hash=True)
+    alias: typing.Optional[str] = dataclasses.field(default=None, hash=True)
 
     def __str__(self) -> str:
         return f'[{self.url}|{self.alias}]' if self.alias else self.url
@@ -411,11 +441,11 @@ class Link:
     def __post_init__(self) -> None:
         if not isinstance(self.url, str):
             raise TypeError('url argument must be a string, not %r.' % type(self.url).__name__)
-        elif not isinstance(self.alias, Optional[str]):
+        elif not isinstance(self.alias, typing.Optional[str]):
             raise TypeError('alias argument must be a string, not %r.' % type(self.alias).__name__)
 
 
-@dataclass(unsafe_hash=True, frozen=True, slots=True)
+@dataclasses.dataclass(unsafe_hash=True, frozen=True, slots=True)
 class Media:
     """Represents a media upload for user bio, content of posts, etc.
 
@@ -428,10 +458,10 @@ class Media:
     ```
 
     """
-    type: enums.MediaType = field(hash=False)
-    url: str = field(hash=True)
-    caption: Optional[str] = field(default=None, hash=True)
-    id: Optional[str] = field(default=None, hash=True)
+    type: enums.MediaType = dataclasses.field(hash=False)
+    url: str = dataclasses.field(hash=True)
+    caption: typing.Optional[str] = dataclasses.field(default=None, hash=True)
+    id: typing.Optional[str] = dataclasses.field(default=None, hash=True)
 
     def __str__(self) -> str:
         return f"[IMG={self.id}]" if self.id else self.url
@@ -439,13 +469,13 @@ class Media:
     def __post_init__(self) -> None:
         if not isinstance(self.url, str):
             raise TypeError('url argument must be a string, not %r.' % type(self.url).__name__)
-        elif not isinstance(self.caption, Optional[str]):
+        elif not isinstance(self.caption, typing.Optional[str]):
             raise TypeError('caption argument must be a string, not %r.' % type(self.alias).__name__)
         elif not isinstance(self.type, enums.MediaType):
             raise TypeError('type argument must be a MediaType object not %r.' % type(self.type).__name__)
         elif self.type not in (enums.MediaType.IMAGE, enums.MediaType.YOUTUBE):
             raise ValueError('type argument must be IMAGE or YOUTUBE, not %r.' % self.type.name)
-        elif not isinstance(self.id, Optional[str]):
+        elif not isinstance(self.id, typing.Optional[str]):
             raise TypeError('id argument must be a string not %r.' % type(self.id).__name__)
         elif isinstance(self.id, str):
             if len(self.id) != 3:
@@ -454,7 +484,7 @@ class Media:
                 raise ValueError('id argument must have only uppercase ascii alphabetic characters.')
 
     @property
-    def json(self) -> Tuple[int, str, Optional[str], Optional[str]]:
+    def json(self) -> typing.Tuple[int, str, typing.Optional[str], typing.Optional[str]]:
         return [
             self.type.value,
             self.url,
@@ -463,9 +493,9 @@ class Media:
         ]
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclasses.dataclass(init=False, unsafe_hash=True)
 class MediaList:
-    args: Tuple[Media, ...] = field(hash=True)
+    args: typing.Tuple[Media, ...] = dataclasses.field(hash=True)
 
     def __init__(self, *args: Media) -> None:
         unmatch = tuple(filter(lambda m: not isinstance(m, Media), args))
@@ -473,28 +503,28 @@ class MediaList:
             raise ValueError('expected Media object, not %r.' % type(unmatch[0]).__name__)
         self.args = args
 
-    def __iter__(self) -> Iterator[Media]:
+    def __iter__(self) -> typing.Iterator[Media]:
         return iter(self.args)
 
     def __len__(self) -> int:
         return len(self.args)
 
     @property
-    def json(self) -> List[Tuple[int, str, Optional[str], Optional[str]]]:
+    def json(self) -> typing.List[typing.Tuple[int, str, typing.Optional[str], typing.Optional[str]]]:
         return [m.json for m in self.args]
 
     @property
-    def types(self) -> List[enums.MediaType]:
+    def types(self) -> typing.List[enums.MediaType]:
         return [m.type for m in self.args]
 
     @property
-    def urls(self) -> List[str]:
+    def urls(self) -> typing.List[str]:
         return [m.url for m in self.args]
 
     @property
-    def captions(self) -> List[str]:
+    def captions(self) -> typing.List[str]:
         return [m.caption for m in self.args]
 
     @property
-    def ids(self) -> List[str]:
+    def ids(self) -> typing.List[str]:
         return [m.id for m in self.args]

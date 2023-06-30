@@ -15,7 +15,7 @@ __url__ = 'https://github.com/ViktorSky/python-aminobots'
 __version__ = '0.0.1'
 __author__ = 'ViktorSky'
 __author_email__ = 'viktorbotsprojects@gmail.com'
-__license__ = 'MIT LICENSE'
+__license__ = 'MIT'
 __copyright__ = 'Copyright (c) 2023 ViktorSky'
 
 
@@ -30,13 +30,13 @@ from .http import *
 from .rtc import *
 from .ws import *
 from . import (
+    objects as objects,
     abc as abc,
     enums as enums,
     errors as errors,
+    utils as utils,
     models as models,
-    objects as objects,
-    models as models,
-    utils as utils
+    youtube as youtube
 )
 
 __path__ = pkgutil.extend_path(__path__, __name__)
