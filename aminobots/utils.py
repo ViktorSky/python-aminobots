@@ -234,7 +234,7 @@ class Device(str):
 
 
 @typing.overload
-def device_gen(id: None) -> Device:
+def device_gen() -> Device:
     ...
 
 @typing.overload
@@ -293,11 +293,11 @@ def build_url(path: str, *, fragment: typing.Optional[str] = None, **params: typ
     ])
 
 
-def parse_annotations(func) -> typing.Dict[str, type]:
+def parse_annotations(func, default=MISSING) -> typing.Dict[str, type]:
     function = inspect.signature(func)
     annotations: typing.Dict[str, type] = {}
     for name, parameter in function.parameters.items():
-        annotations[name] = parameter.annotation if parameter.annotation is not parameter.empty else MISSING
+        annotations[name] = parameter.annotation if parameter.annotation is not parameter.empty else default
     return annotations
 
 

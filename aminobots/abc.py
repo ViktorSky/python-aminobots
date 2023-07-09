@@ -20,283 +20,386 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from dataclasses import dataclass
+from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import (
     Any,
-    ClassVar,
+    Iterable,
     Optional,
-    Protocol,
-    Union,
-    runtime_checkable
+    Union
 )
-import logging
-import yarl
-from . import enums
+from logging import Logger
+from .enums import Language
+from .utils import Device, SID
 
 __all__ = (
     'ABCAmino',
     'ABCACM',
     'ABCHTTPClient',
     'ABCRTCClient',
-    'ABCWSClient',
-    'Object',
+    'ABCWSClient'
 )
 
 
-@runtime_checkable
-@dataclass(repr=False)
-class Object(Protocol):
-    json: Union[list, dict]
-
-
-@runtime_checkable
-class ABCAmino(Protocol):
+class ABCAmino(metaclass=ABCMeta):
     __slots__ = ()
 
-    logger: logging.Logger
-    http: 'ABCHTTPClient'
-    rtc: 'ABCRTCClient'
-    ws: 'ABCWSClient'
+    def __dir__(self) -> Iterable[str]:
+        return [attr for attr in object.__dir__(self) if not attr.startswith('_') or attr.startswith('__')]
 
-    async def get_from_link(self, link: str, /) -> Object:
-        """Request link data.
+    @property
+    def auid(self) -> Optional[str]:
+        """Account user ID"""
+        return getattr(self, '_auid', None)
+
+    @auid.setter
+    def auid(self, value: Optional[str]) -> None:
+        if not isinstance(value, Optional[str]):
+            raise TypeError('auid must be a string, not %r' % type(value).__name__)
+        setattr(self, '_auid', value)
+
+    @property
+    def device(self) -> Device:
+        """The device being used by the client"""
+        return getattr(self, '_device')
+
+    @device.setter
+    def device(self, value: Union[str, Device]) -> None:
+        if not isinstance(value, (str, Device)):
+            raise TypeError('device must be a string or Device object, not %r.' % type(value).__name__)
+        setattr(self, '_device', Device(value) if isinstance(value, str) else value)
+
+    @property
+    def language(self) -> Language:
+        """Http language"""
+        return getattr(self, 'languages', Language.ENGLISH)
+
+    @language.setter
+    def language(self, value: Language) -> None:
+        if not isinstance(self, Language):
+            raise TypeError('language must be a Language object not %r.' % type(value).__name__)
+        elif value is Language.ALL:
+            raise ValueError('can\'t set all languages, select one only.')
+        setattr(self, '_language', value)
+
+    @property
+    def logger(self) -> Logger:
+        """Instance logger"""
+        return getattr(self, '_logger')
+
+    @logger.setter
+    def logger(self, value: Logger) -> None:
+        if not isinstance(value, Logger):
+            raise TypeError('logger must be a Logger object, not %r.' % type(value).__name__)
+        setattr(self, '_logger', value)
+
+    @property
+    def proxy(self) -> Optional[str]:
+        """Http proxy url"""
+        return getattr(self, '_proxy', None)
+
+    @proxy.setter
+    def proxy(self, value: Optional[str]) -> None:
+        if not isinstance(value, Optional[str]):
+            raise TypeError('proxy must be a string, not %r' % type(value).__name__)
+        setattr(self, '_proxy', value)
+
+    @property
+    def raiseExceptions(self) -> bool:
+        """Raise api exceptions (APIError subclasses)"""
+        return getattr(self, '_raiseExceptions', True)
+
+    @raiseExceptions.setter
+    def raiseExceptions(self, value: bool) -> None:
+        setattr(self, '_raiseExceptions', bool(value))
+
+    @property
+    def secret(self) -> Optional[str]:
+        """Account secret password. (encoded string)"""
+        return getattr(self, '_secret', None)
+
+    @secret.setter
+    def secret(self, value: Optional[str]) -> None:
+        if not isinstance(value, Optional[str]):
+            raise TypeError('secret must be a string, not %r' % type(value).__name__)
+        setattr(self, '_secret', value)
+
+    @property
+    def sid(self) -> Optional[SID]:
+        """The session ID for the Amino client"""
+        return getattr(self, '_sid', None)
+
+    @sid.setter
+    def sid(self, value: Union[str, SID, None]) -> None:
+        if not isinstance(value, Union[str, SID, None]):
+            raise TypeError('expected str, SID or None, not %r.' % type(value).__name__)
+        setattr(self, '_sid', SID(value) if isinstance(value, str) else value)
+
+    @property
+    def timeout(self) -> Optional[str]:
+        """Http request timeout"""
+        return getattr(self, '_timeout', None)
+
+    @timeout.setter
+    def timeout(self, value: Optional[int]) -> None:
+        if not isinstance(value, Optional[int]):
+            raise TypeError('timeout must be a integer not %r.' % type(value).__name__)
+        setattr(self, '_timeout', value)
+
+    @property
+    def utc(self) -> int:
+        """User device timezone (UTC)"""
+        return getattr(self, '_utc', 0)
+
+    @utc.setter
+    def utc(self, value: int):
+        if not isinstance(value, int):
+            raise TypeError('utc must be a integer not %r.' % type(value).__name__)
+        if value not in range(-12, 15):
+            raise ValueError('utc must be between -12 and 14.')
+        setattr(self, '_utc', value)
+
+    @abstractmethod
+    async def get_from_link(self, link: Any) -> Any:
+        """Request amino link data.
 
         Parameters
         ----------
         link : :class:`str`
             Http amino url.
-    
-        Examples
-        --------
-        ```
-        >>> link: str = input('amino link: ')
-        >>> r = await amino.get_from_link(link)
-        >>> list(r.json)
-        ['api:duration', 'api:message', 'linkInfoV2', 'api:timestamp', 'api:statuscode']
-        ```
+
+        Returns
+        -------
+        LinkResolution
+            path : `~aminobots.models.LinkResolution`
 
         """
-        raise NotImplementedError
 
-    async def get_from_device(self, device: str, /) -> Object:
-        """Get auid (user-id) from device.
+    @abstractmethod
+    async def get_from_device(self, device: Any) -> Any:
+        """Request auid (user ID) from device.
 
         Parameters
         ----------
         device : :class:`str` | :class:`Device`
             The user device.
 
-        """
-        raise NotImplementedError
+        Returns
+        -------
+        FromDevice
+            path : `~aminobots.models.FromDevice`
 
-    async def get_link_info(self, link: str, /) -> Object:
-        """Request link info. (only community links)
+        """
+
+    @abstractmethod
+    async def get_link_info(self, link: Any) -> Any:
+        """Request link info. (Only community links)
 
         Parameters
         ----------
         link : :class:`str`
-            Http amino url.
+            Http amino community url.
 
-        Examples
-        --------
-        ```
-        >>> link: str = input('community link: ')
-        >>> r = await amino.get_link_info(link)
-        ```
+        Returns
+        -------
+        LinkIdentify
+            path : `~aminobots.models.LinkIdentify`
 
         """
-        raise NotImplementedError
 
-    async def get_ads_info(self) -> Object:
-        """Get account coins earned by ads.
+    @abstractmethod
+    async def get_ads_info(self) -> Any:
+        """Request account coins earned by ads.
 
-        Examples
-        --------
-        ```
-        >>> ads = await amino.get_ads_info()
-        >>> print(ads.coinsEarned.weekly)
-        ```
+        Notes
+        -----
+        Requires login
+
+        Returns
+        -------
+        WalletAds
+            path : `~aminobots.models.WalletAds`
 
         """
-        raise NotImplementedError
 
-    async def get_user_info(self, id: str, /, cid: Optional[int] = ...) -> Object:
+    @abstractmethod
+    async def get_user_info(self, id: Any, comId: Any = ...) -> Any:
         """Request user profile.
 
         Parameters
         ----------
         id : :class:`str`
-            User id.
-        cid : :class:`int` | `None`
-            Community id.
+            User ID.
+        comId : :class:`int`, default=`0`
+            Community ID. If not provided, global profile is returned
 
-        Examples
-        --------
-        ```
-        >>> user_link = input('user-link:')
-        >>> info = await amino.get_from_link(user_link)
-        >>> user = await amino.get_user_info(info.id)
-        >>> print('nickname:', user.nickname)
-        ```
+        Returns
+        -------
+        UserInfo
+            path : `~aminobots.models.UserInfo`
 
         """
-        raise NotImplementedError
 
-    async def get_account_info(self) -> Object:
-        """Request account info.
+    @abstractmethod
+    async def get_account_info(self) -> Any:
+        """Request user account.
 
-        Requirements
-        ------------
-        - Login
+        Notes
+        -----
+        Requires login
 
-        Examples
-        --------
-        ```
-        >>> info = await amino.get_account_info()
-        >>> print(info.account.email)
-        ```
+        Returns
+        -------
+        AccountInfo
+            path : `~aminobots.models.AccountInfo`
 
         """
-        raise NotImplementedError
 
-    async def get_chat_info(self, id: str, /, cid: Optional[int] = ...) -> Object:
-        """Get chat thread info.
+    @abstractmethod
+    async def get_chat_info(self, id: Any, comId: Any = ...) -> Any:
+        """Request chat thread info.
 
         Parameters
         ----------
         id : :class:`str`
-            Chat thread id.
-        cid : :class:`int` | `None`
-            Community id.
+            Chat ID.
+        comId : :class:`int`, default=`0`
+            Community ID. If not provided, global chat is returned
+
+        Returns
+        -------
+        ChatInfo
+            path : `~aminobots.models.ChatInfo`
 
         """
-        raise NotImplementedError
 
-    async def get_chat_members(self, id: str, /, start: int = ..., size: int = ..., cid: Optional[int] = ...) -> Object:
-        """Get members profiles in chat.
+    @abstractmethod
+    async def get_chat_members(self, id: Any, start: Any = ..., size: Any = ..., comId: Any = ...) -> Any:
+        """Request members profiles in a chat.
 
         Parameters
         ----------
         id : :class:`str`
-            Chat thread id.
-        start : :class:`int`
+            Chat ID.
+        start : :class:`int`, default=`0`
             Start index.
-        size : :class:`int`
-            Size of list of users. Max size is 100.
-        cid : :class:`int` | `None`
-            Community id.
-        """
-        raise NotImplementedError
+        size : :class:`int`, default=`25`
+            Size of list of users. Max size is `100`.
+        comId : :class:`int`, default=`0`
+            Community ID. If not provided, global chat members is returned
 
-    async def get_community_info(self, id: int, /) -> Object:
-        """Request Community info.
+        Returns
+        -------
+        ChatMembers
+            path : `~aminobots.models.ChatMembers`
+
+        """
+
+    @abstractmethod
+    async def get_community_info(self, id: Any) -> Any:
+        """Request community profile.
 
         Parameters
         ----------
         id : :class:`int`
-            Community id.
+            Community ID.
 
-        Examples
-        --------
-        ```
-        >>> community_link = input('community-link: ')
-        >>> cid = await amino.get_from_link(community_link)
-        >>> info = await amino.get_community_info(cid.id)
-        >>> print('community name:', info.community.name)
-        ```
+        Returns
+        -------
+        CommunityInfo
+            path : `~aminobots.models.CommunityInfo`
 
         """
-        raise NotImplementedError
 
-    async def get_community_trending(self, cid: int, /) -> Object:
-        """Get trending of community.
+
+    async def get_community_trending(self, id: Any) -> Any:
+        """Request trending of community.
 
         Parameters
         ----------
-        cid : :class:`int`
-            Community id.
-
-        Examples
-        --------
-        ```
-        >>> trending = await amino.get_community_trending(communityId)
-        ```
+        id : :class:`int`
+            Community ID.
 
         """
-        raise NotImplementedError
 
-    async def get_wallet_info(self) -> Object:
-        """Get account wallet.
+    @abstractmethod
+    async def get_wallet_info(self) -> Any:
+        """Request account wallet.
 
-        Requirements
-        ------------
-        - Login
+        Notes
+        -----
+        Requires login
 
-        Examples
-        --------
-        ```
-        >>> info = await amino.get_wallet_info()
-        >>> print(info.wallet.totalCoins)
-        ```
+        Returns
+        -------
+        WalletInfo
+            path : `~aminobots.models.WalletInfo`
 
         """
-        raise NotImplementedError
 
-    async def get_wallet_history(self, start: int = ..., size: int = ...) -> Object:
-        """Get account coin history.
+    @abstractmethod
+    async def get_wallet_history(self, start: Any = ..., size: Any = ...) -> Any:
+        """Request account coin history.
 
-        Requirements
-        ------------
-        - Login
+        Notes
+        -----
+        Requires login
 
         Parameters
         ----------
-        start : :class:`int`
-            The history index.
-        size : :class:`int`
-            The size of the history list. (max is 100)
+        start : :class:`int`, default=`0`
+            The history start index.
+        size : :class:`int`, default=`25`
+            The size of the history list. Max size is `100`.
+
+        Returns
+        -------
+        WalletHistory
+            path : `~aminobots.models.WalletHistory`
 
         """
-        raise NotImplementedError
 
-    async def get_account_push_settings(self) -> Object:
-        """Get account global push settings.
+    @abstractmethod
+    async def get_account_push_settings(self) -> Any:
+        """Request account push settings.
 
-        Requirements
-        ------------
-        - Login
+        Notes
+        -----
+        Requires login
 
-        Examples
-        --------
-        ```
-        >>> push = await amino.get_account_push_settings()
-        >>> print(push.settings.communityIds)
-        ```
+        Returns
+        -------
+        AllPushSettings
+            path : `~aminobots.models.AllPushSettings`
 
         """
-        raise NotImplementedError
 
-    async def get_push_settings(self, cid: int = ...) -> Object:
+    @abstractmethod
+    async def get_push_settings(self, comId: Any = ...) -> Any:
         """Get global/community push settings.
 
-        Requirements
-        ------------
-        - Login
+        Notes
+        -----
+        Requires login
 
         Parameters
         ----------
-        cid : :class:`int`
-            The community id.
+        comId : :class:`int`, default=`0`
+            Community ID. If not provided, global settings is returned
+
+        Returns
+        -------
+        PushNotification
+            path : `~aminobots.models.PushNotification`
 
         """
-        raise NotImplementedError
 
-    async def set_push_settings(self, activities: bool, broadcasts: bool, cid: int = ...) -> Object:
+    @abstractmethod
+    async def set_push_settings(self, activities: Any, broadcasts: Any, comId: Any = ...) -> Any:
         """Update the global/community push settings.
 
-        Requirements
-        ------------
-        - Login
+        Notes
+        -----
+        Requires login
 
         Parameters
         ----------
@@ -304,203 +407,244 @@ class ABCAmino(Protocol):
             Enable members activities notifications.
         broadcasts : :class:`bool`
             Enable leaders broadcasts notifications.
-        cid : :class:`int`
-            The community id.
+        comId : :class:`int`, defaul=`0`
+            The Community ID. If not provided, global settings is updated.
 
-        Examples
-        --------
-        ```
-        >>> await amino.set_push_settings(False, True, communityId)
-        ```
-
-        """
-        raise NotImplementedError
-
-    async def get_membership_info(self) -> Object:
-        """Get account membership info.
-
-        Requirements
-        ------------
-        - Login
-
-        Examples
-        --------
-        ```
-        >>> info = await amino.get_membership_info()
-        >>> print(info.enabled)
-        ```
+        Returns
+        -------
+        PushNotification
+            path : `~aminobots.models.PushNotification`
 
         """
-        raise NotImplementedError
 
-    async def joined_chats(self, cid: int, start: int = ..., size: int = ...) -> Object:
-        """Get global/community joined chats.
+    @abstractmethod
+    async def get_membership_info(self) -> Any:
+        """Request account membership info.
 
-        Parameters
-        ----------
-        cid : :class:`int`
-            Comminity id.
-        start : :class:`int`
-            Start index.
-        size : :class:`int`
-            Size of the list. Max size is 100.
+        Notes
+        -----
+        Requires login
+
+        Returns
+        -------
+        MembershipInfo
+            path : `~aminobots.models.MembershipInfo`
 
         """
-        raise NotImplementedError
 
-    async def configure_membership(self, autoRenew: bool) -> Object:
+    @abstractmethod
+    async def configure_membership(self, autoRenew: Any) -> Any:
         """Update the account membership.
 
-        Requirements
-        ------------
-        - Login
+        Notes
+        -----
+        Requires login
 
         Parameters
         ----------
         autoRenew : :class:`bool`
             Auto renew the membership.
 
-        """
-        raise NotImplementedError
+        Returns
+        -------
+        MembershipConfig
+            path : `~aminobots.models.MembershipConfig`
 
-    async def joined_communities(self) -> Object:
-        """Get list of joined communities.
+        """
+
+    @abstractmethod
+    async def joined_chats(self, start: Any = ..., size: Any = ..., comId: Any = ...) -> Any:
+        """Request global/community joined chats.
+
+        Notes
+        -----
+        Requires login
 
         Parameters
         ----------
-        start : :class:`int`
-            Start index.
-        size : :class:`int`
-            Size of the list. Max size is 100.
+        start : :class:`int`, default=`0`
+            Chat start index.
+        size : :class:`int`, default=`0`
+            Size of the list. Max size is `100`.
+        comId : :class:`int`, defualt=`0`
+            The Community ID. If not provided, global joined-chats is returned
 
-        Examples
-        --------
-        ```
-        >>> await amino.joined_communities()
-        ```
+        Returns
+        -------
+        JoinedChats
+            path : `~aminobots.models.JoinedChats`
 
         """
-        raise NotImplementedError
 
-    async def get_vip_users(self, cid: int, /) -> Object:
-        """Get community influencers (vip users)
+    @abstractmethod
+    async def joined_communities(self, start: Any = ..., size: Any = ...) -> Any:
+        """Request joined communities.
+
+        Notes
+        -----
+        Requires login
 
         Parameters
         ----------
-        cid : :class:`int`
-            Community id.
+        start : :class:`int`, default=`0`
+            Community start index.
+        size : :class:`int`, default=`25`
+            Size of the list. Max size is `100`.
+
+        Returns
+        -------
+        JoinedCommunities
+            path : `~aminobots.models.JoinedCommunities`
 
         """
-        raise NotImplementedError
 
-    async def search_user(self, q: str, /, cid: Optional[int] = ...) -> Object:
-        """Search user. Match amino id or nickname.
+    @abstractmethod
+    async def get_vip_users(self, comId: Any) -> Any:
+        """Request community influencer profiles (vip user profiles)
+
+        Parameters
+        ----------
+        comId : :class:`int`
+            The community ID.
+
+        Returns
+        -------
+        CommunityInfluencers
+            path : `~aminobots.models.CommunityInfluencers`
+
+        """
+
+    @abstractmethod
+    async def search_user(self, q: Any, comId: Any = ...) -> Any:
+        """Search user. Match amino ID or nickname.
 
         Parameters
         ----------
         q : :class:`str`
             Query string.
-        cid : :class:`int` | `None`
-            Community id.
+        comId : :class:`int`, default=`0`
+            The Community ID. If not provided, global user profile is searched.
+
+        Returns
+        -------
+        SearchUser
+            path : `~aminobots.models.SearchUser`
 
         """
-        raise NotImplementedError
 
-    async def search_community(self, q: str, /, language: str = ...) -> Object:
-        """Search community. Match amino-id, name.
+    @abstractmethod
+    async def search_community(self, q: Any, language: Any = ...) -> Any:
+        """Search community. Match amino ID or name.
 
         Parameters
         ----------
         q : :class:`str`
             Query string.
-        language : :class:`Language`
+        language : :class:`Language`, defualt=`Language.ALL`
             Search language filter.
 
-        """
-        raise NotImplementedError
+        Returns
+        -------
+        SearchCommunity
+            path : `~aminobots.models.SearchCommunity`
 
-    async def search_chat(self, q: str, /, cid: Optional[int] = ...) -> Object:
+        """
+
+    @abstractmethod
+    async def search_chat(self, q: Any, pageToken: Any = ..., comId: Any = ...) -> Any:
         """Search global/community chat.
 
         Parameters
         ----------
         q : :class:`str`
-            Chat title, search key.
-        cid : :class:`int`
-            Community id.
+            Chat title
+        comId : :class:`int`, default=`0`
+            The community ID. If not provided, global chat is searched.
+        pageToken : :class:`str`, default=`None`
+            Next page token or Previous page token.
+
+        Returns
+        -------
+        SearchChat
+            path : `~aminobots.models.SearchChat`
 
         """
-        raise NotImplementedError
 
-    async def search_quiz(self, q: str, /, cid: Optional[int] = ...) -> Object:
+    @abstractmethod
+    async def search_quiz(self, q: Any, comId: Any = ...) -> Any:
         """Search quiz posts.
 
         Parameters
         ----------
         q : :class:`str`
             Quiz title, search key.
-        cid : :class:`int` | `None`
-            Community id.
+        comId : :class:`int`
+            Community ID.
+
+        Returns
+        ------
+        SearchQuiz
+            path : `~aminobots.models.SearchQuiz`
 
         """
-        raise NotImplementedError
 
-    async def verify_password(self, password: str = ..., secret: str = ...) -> Object:
+    @abstractmethod
+    async def verify_password(self, password: Any = ..., secret: Any = ...) -> Any:
         """Verify the account password.
+
+        Notes
+        -----
+        Requires login
 
         Parameters
         ----------
-        password : :class:`str` | `None`
+        password : :class:`str`, default=`None`
             The account password.
-        secret : :class:`str` | `None`
-            The account encoded secret password.
+        secret : :class:`str`, default=`None`
+            The account secret password.
 
-        Examples
-        --------
-        ```
-        >>> await amino.login_sid(os.environ['sid'])
-        >>> check = await amino.verify_password('my-password')
-        >>> check.api.message
-        'OK.'
-        ```
+        Raises
+        ------
+        IncorrectPassword
+            If the password is incorrect.
+
+        Returns
+        -------
+        VerifyPassword
+            path : `~aminobots.models.VerifyPassword`
 
         """
-        raise NotImplementedError
 
-    async def login(
-        self,
-        email: str,
-        password: Optional[str] = ...,
-        secret: Optional[str] = ...
-    ) -> Object:
-        """Login in one account.
+    @abstractmethod
+    async def login(self, email: Any, password: Any = ..., secret: Any = ...) -> Any:
+        """Login in an account.
 
         Parameters
         ----------
         email : :class:`str`
             Email of the amino account.
-        password : :class:`str` | `None`
-            Password of the amino account.
-        secret : :class:`str` | `None`
-            Secret password encoded of the amino account.
+        password : :class:`str`, default=`None`
+            The account password.
+        secret : :class:`str`, default=`None`
+            The account secret password.
 
-        Examples
-        --------
-        ```
-        >>> log = await amino.login(email='example@example.com', password='null-password')
-        >>> log.account.email
-        'example@example.com'
-        ```
+        Raises
+        ------
+
+        Returns
+        -------
+        Login
+            path : `~aminobots.models.Login`
 
         """
-        raise NotImplementedError
 
+    @abstractmethod
     async def login_phone(
         self,
         phone: str,
         password: str = ...,
         secret: str = ...
-    ) -> Object:
+    ) -> Any:
         """Login in one account.
 
         Parameters
@@ -522,117 +666,127 @@ class ABCAmino(Protocol):
         """
         raise NotImplementedError
 
-    async def from_sid(self):
-        raise NotImplementedError
-
-
-@runtime_checkable
-class ABCACM(Protocol):
-    ...
-
-
-@runtime_checkable
-class ABCWSClient(Protocol):
-    ...
-
-
-@runtime_checkable
-class ABCRTCClient(Protocol):
-    ...
-
-
-@runtime_checkable
-class ABCHTTPClient(Protocol):
-    __slots__ = ()
-
-    BASE: ClassVar[yarl.URL] = yarl.URL('https://service.narvii.com/api/v1/')
-
-    async def headers(
-        self,
-        data: Optional[str] = None,
-        content_type: Optional[str] = None
-    ) -> dict:
-        """Prepare the request header.
+    async def login_sid(self, sid: str) -> Any:
+        """Login in one account.
 
         Parameters
-        ---------
-        data : :class:`str` | `None`
-            The http body string.
-        content_type : :class:`str` | `None`
-            Content-Type value of header.
-
-        Returns
-        -------
-        dict
-            The full http headers.
+        ----------
+        sid : :class:`str` | :class:`SID`
+            The session id (token).
 
         Examples
         --------
         ```
-        >>> data: str = ujson.dumps({})
-        >>> headers: dict = await amino.prepare_headers(data)
+        >>> await amino.login_sid(os.environ.get('SID'))
+        >>> print(amino.user.nickname)
         ```
 
         """
         raise NotImplementedError
 
+
+class ABCACM(metaclass=ABCMeta):
+    ...
+
+
+class ABCWSClient(metaclass=ABCMeta):
+    ...
+
+
+class ABCRTCClient(metaclass=ABCMeta):
+    ...
+
+
+class ABCHTTPClient(metaclass=ABCMeta):
+
+    @abstractmethod
+    async def headers(
+        self,
+        data: Any = ...,
+        content_type: Any = ...
+    ) -> Any:
+        """Prepare the request header.
+
+        Parameters
+        ----------
+        data : :class:`str` | `None`
+            The http body string.
+        content_type : :class:`str` | `None`
+            Content-Type value of header.
+
+        Examples
+        --------
+        >>> data = ujson.dumps({})
+        >>> headers = await amino.prepare_headers(data)
+
+        Returns
+        -------
+        dict
+            The full HTTP headers.
+
+        """
+
+    @abstractmethod
     async def request(
         self,
-        method: str,
-        url: str,
-        params: Optional[dict] = ...,
-        json: Optional[dict] = ...,
+        method: Any,
+        path: Any,
+        params: Any = ...,
+        json: Any = ...,
         *,
-        cid: Optional[int] = ...,
-        scopeCid: int = ...,
-        minify: bool = ...
-    ) -> dict:
+        comId: Any = ...,
+        scope: Any = ...,
+        minify: Any = ...
+    ) -> Any:
         """Make a request to the amino api.
 
         Parameters
         ----------
         method : :class:`str`
             HTTP method.
-        url : :class:`str`
-            Resource path.
+        path : :class:`str`
+            Resource path url.
         params : :class:`dict` | `None`
             Request parameters. Only for get method.
         json : :class:`dict` | `None`
             The data for the request. Only for post method.
-        cid : :class:`int` | `None`
-            Community id.
-        scopeCid : :class:`int`
-            Scope community id.
+        comId : :class:`int`
+            Community ID/Global request
+        scope : :class:`int`
+            Scope community ID.
         minify : :class:`bool`
-            Data to json_minify.
+            Json minify the data.
 
         Raises
         ------
         APIError
-            Raise when the api response status is not `0`.
-        ClientError
-            Raise when the request status <= `400`.
+            Raised when the api response status is not `0`.
         ServerError
             Raise when the request status <= `500`.
-        Forbidden
-            Raise when `403` http error eccurs.
+        ClientError
+            Raised when the request status <= `400`.
+        RedirectionError
+            Raised when the request status <= `300`.
 
         Examples
+        --------
+        >>> await amino.request('GET', 'user-profile', params=dict(size=5))
+
+        Returns
         -------
-        ```
-        >>> r: dict = await amino.request('GET', 'user-profile', params=dict(size=5))
-        ```
+        dict
+            The API response data
 
         """
-        raise NotImplementedError
 
+    @abstractmethod
     async def get(
         self,
-        url: str,
-        *,
-        params: Optional[dict] = ...,
-        **kwargs: ...
-    ) -> dict:
+        path: Any,
+        params: Any = ...,
+        comId: Any = ...,
+        scope: Any = ...
+    ) -> Any:
         """Make a GET request to the amino api.
 
         Parameters
@@ -641,32 +795,43 @@ class ABCHTTPClient(Protocol):
             The resource path.
         params : :class:`dict` | `None`
             Parameters of the request.
+        comId : :class:`int`
+            Community ID/Global.
+        scope : :class:`int`
+            Scope Community ID.
 
         Raises
         ------
-        HTTPException
-            Raise when api response is not `0`.
-        Forbidden
-            If `403` error eccurs.
+        APIError
+            Raised when the api response status is not `0`.
+        ServerError
+            Raise when the request status <= `500`.
+        ClientError
+            Raised when the request status <= `400`.
+        RedirectionError
+            Raised when the request status <= `300`.
 
-        Examples
+        Returns
+        -------
+        dict
+            The API response data
+
+        See also
         --------
-        ```
-        >>> r: dict = await amino.get('user-profile', dict(size=5))
-        >>> r.get('api:message')
-        'OK.'
-        ```
+        - :func:`HTTPClient.request`
 
         """
-        raise NotImplementedError
 
+    @abstractmethod
     async def post(
         self,
-        url: dict,
-        *,
-        json: dict,
-        **kwargs: ...
-    ) -> dict:
+        path: Any,
+        json: Any,
+        comId: Any = ...,
+        scope: Any = ...,
+        content_type: Any = ...,
+        minify: Any = ...
+    ) -> Any:
         """Make a POST request to the amino api.
 
         Parameters
@@ -675,50 +840,33 @@ class ABCHTTPClient(Protocol):
             The resource path.
         json : :class:`dict`
             Dict data to send.
-        Raises
-        ------
-        HTTPException
-            Raise when api response is not `0`.
-        Forbidden
-            If `403` error eccurs.
-
-        """
-        raise NotImplementedError
-
-    async def put(self, url: str, /) -> dict:
-        """Make a PUT request to the amino api.
-
-        Parameters
-        ----------
-        url : :class:`str`
-            The resource path.
+        comId : :class:`int`
+            Community ID/Global.
+        scope : :class:`int`
+            Scope Community ID.
+        content_type : :class:`str` | `None`
+            The content type for HTTP headers.
+        minify : :class:`bool`
+            Json minify the data.
 
         Raises
         ------
-        HTTPException:
-            Raise when api response is not :class:`0`.
-        Forbidden:
-            If `403` error eccurs.
+        APIError
+            Raised when the api response status is not `0`.
+        ServerError
+            Raise when the request status <= `500`.
+        ClientError
+            Raised when the request status <= `400`.
+        RedirectionError
+            Raised when the request status <= `300`.
+
+        Returns
+        -------
+        dict
+            The API response data
+
+        See also
+        --------
+        - :func:`HTTPClient.request`
 
         """
-        raise NotImplementedError
-
-    async def delete(self, url: str, **kwargs: Any) -> dict:
-        """Make a DELETE request to the amino api.
-
-        Parameters
-        ----------
-        url : :class:`str`
-            The resource path.
-        cid : :class:`int`
-            Community id.
-
-        Raises
-        ------
-        HTTPException
-            Raise when api response is not :class:`0`.
-        Forbidden
-            If `403` error eccurs.
-
-        """
-        raise NotImplementedError

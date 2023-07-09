@@ -20,25 +20,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import enum
+from typing import TYPE_CHECKING
+from enum import Enum
 
 __all__ = (
     'Action',
     'AdsLevel',
     'AlertEvent',
-    'ChannelJoinType',
+    'Boolean',
+    'ChannelJoinRole',
     'ChannelType',
     'ClientType',
     'ChatEvent',
+    'ChatRequestPermission',
     'ChatType',
+    'CommentPermission',
     'CommentSort',
+    'CommunityStatus',
     'Connection',
     'ContentType',
+    'DisabledLevel',
     'Encoding',
     'Event',
     'EventType',
+    'FollowingStatus',
     'FilterType',
+    'FrameType',
     'Gender',
+    'ItemType',
+    'ItemStatus',
+    'JoinType',
     'Language',
     'MediaType',
     'MessageType',
@@ -48,78 +59,80 @@ __all__ = (
     'NoticeStatus',
     'NoticeType',
     'ObjectType',
+    'PayloadType',
     'PaymentType',
     'Role',
+    'SourceType',
     'UserType',
     'ValidationType',
     'ValidationLevel',
     'VerifyType'
 )
-# AuthType
 
-class Enum(enum.Enum):
-    def __eq__(self, other) -> bool:
-        """this == other"""
-        if isinstance(other, enum.Enum):
-            return self.value == other.value
-        else:
-            return self.value == other
+if not TYPE_CHECKING:
+    class Enum(Enum):
+        def __eq__(self, other) -> bool:
+            """this == other"""
+            if isinstance(other, Enum):
+                return self.value == other.value
+            else:
+                return self.value == other
 
-    def __ne__(self, other):
-        """this != other"""
-        if isinstance(other, enum.Enum):
-            return self.value != other.value
-        else:
-            return self.value != other
+        def __ne__(self, other):
+            """this != other"""
+            if isinstance(other, Enum):
+                return self.value != other.value
+            else:
+                return self.value != other
 
-    def __le__(self, other) -> bool:
-        """this <= other"""
-        if isinstance(other, enum.Enum):
-            return self.value <= other.value
-        else:
-            return self.value <= other
+        def __le__(self, other) -> bool:
+            """this <= other"""
+            if isinstance(other, Enum):
+                return self.value <= other.value
+            else:
+                return self.value <= other
 
-    def __lt__(self, other) -> bool:
-        """this < other"""
-        if isinstance(other, enum.Enum):
-            return self.value < other.value
-        else:
-            return self.value < other
+        def __lt__(self, other) -> bool:
+            """this < other"""
+            if isinstance(other, Enum):
+                return self.value < other.value
+            else:
+                return self.value < other
 
-    def __ge__(self, other) -> bool:
-        """this >= other"""
-        if isinstance(other, enum.Enum):
-            return self.value >= other.value
-        else:
-            return self.value >= other
+        def __ge__(self, other) -> bool:
+            """this >= other"""
+            if isinstance(other, Enum):
+                return self.value >= other.value
+            else:
+                return self.value >= other
 
-    def __gt__(self, other):
-        """this > other"""
-        if isinstance(other, enum.Enum):
-            return self.value > other.value
-        else:
-            return self.value > other
+        def __gt__(self, other):
+            """this > other"""
+            if isinstance(other, Enum):
+                return self.value > other.value
+            else:
+                return self.value > other
 
-    def __add__(self, other):
-        """this + other"""
-        if isinstance(other, enum.Enum):
-            return self.value + other.value
-        else:
-            return self.value + other
+        def __add__(self, other):
+            """this + other"""
+            if isinstance(other, Enum):
+                return self.value + other.value
+            else:
+                return self.value + other
 
-    def __and__(self, other):
-        """this & other"""
-        if isinstance(other, enum.Enum):
-            return self.value and other.value
-        else:
-            return self.value and other
+        def __and__(self, other):
+            """this & other"""
+            if isinstance(other, Enum):
+                return self.value and other.value
+            else:
+                return self.value and other
 
-    def __or__(self, other):
-        """this | other"""
-        if isinstance(other, enum.Enum):
-            return self.value or other.value
-        else:
-            return self.value or other
+        def __or__(self, other):
+            """this | other"""
+            if isinstance(other, Enum):
+                return self.value or other.value
+            else:
+                return self.value or other
 
 
 class Action(Enum):
@@ -133,16 +146,20 @@ class AdsLevel(Enum):
     LEVEL_2 = 2
 
 
-class ChannelJoinType(Enum):
-    OPEN = 1
-    APPROVAL_REQUIRED = 2
-    INVITE_ONLY = 3
+class Boolean(Enum):
+    FALSE = 0
+    TRUE = 1
+
+
+class ChannelJoinRole(Enum):
+    OWNER = 1
+    VIEWER = 2
 
 
 class ChannelType(Enum):
     TEXT = 0
     VOICE = 1
-    LIVE_STREAM = 4
+    VIDEO = 4
     SCREENING_ROOM = 5
 
 
@@ -153,16 +170,48 @@ class ClientType(Enum):
     STORY_EDITOR = 201
 
 
+class CouponStatus(Enum):
+    NOT_AVAILABLE = 1
+    TO_CLAIM = 2
+    AVAILABLE = 3
+
+
+class Color(Enum):
+    CYAN = "#2DA4E7"
+    SEAL_BROWN = "#400000"
+
+
+class CommentPermission(Enum):
+    EVERYONE = 1
+    FOLLOWINGS = 2
+    ONLY_USER = 3
+
+
 class CommentSort(Enum):
     NEWEST = 0
     OLDEST = 1
     TOP = 2
 
 
+class CommunityStatus(Enum):
+    OK = 0
+
+
 class Connection(Enum):
     CLOSE = "Close"
     KEEP_ALIVE = "Keep-Alive"
     UPGRADE = "Upgrade"
+
+
+class ConnectionStatus(Enum):
+    OFFLINE = 1
+    ONLINE = 2
+
+
+class ChatRequestPermission(Enum):
+    EVERYONE = 1
+    FOLLOWINGS = 2
+    DISABLED = 3
 
 
 class ChatType(Enum):
@@ -192,6 +241,13 @@ class ContentType(Enum):
     MULTIPART  = "multipart/form-data"
     TEXT       = "text/plain; charset=utf-8"
     URL_FORM   = "application/x-www-form-urlencoded; charset=utf-8"
+
+
+class DisabledLevel(Enum):
+    NONE = 0
+    CURATOR = 1
+    IMOD = 3
+    LEADER = 2
 
 
 class Encoding(Enum):
@@ -232,11 +288,11 @@ class ChatEvent(Enum):
     VOICE_CHAT_START            = "1000:107:0"
     VOICE_CHAT_END              = "1000:110:0"
 
-    LIVE_STREAM_NOT_ANSWERED    = "1000:55:0"
-    LIVE_STREAM_CANCELLED       = "1000:56:0"
-    LIVE_STREAM_DECLINED        = "1000:57:0"
-    LIVE_STREAM_START           = "1000:108:0"
-    LIVE_STREAM_END             = "1000:111:0"
+    VIDEO_CHAT_NOT_ANSWERED    = "1000:55:0"
+    VIDEO_CHAT_CANCELLED       = "1000:56:0"
+    VIDEO_CHAT_DECLINED        = "1000:57:0"
+    VIDEO_CHAT_START           = "1000:108:0"
+    VIDEO_CHAT_END             = "1000:111:0"
 
     AVATAR_CHAT_NOT_ANSWERED    = "1000:58:0"
     AVATAR_CHAT_CANCELLED       = "1000:59:0"
@@ -275,11 +331,20 @@ class EventType(Enum):
     CHAT = 1000
 
 
+class FollowingStatus(Enum):
+    NOT_FOLLOWING = 0
+    FOLLOWING = 1
+
+
 class FilterType(Enum):
     RECOMMENDED = 'recommended'
     NEWEST = 'newest'
     #ONLINE = 'online'
     JOINED = 'joined-me'
+
+
+class FrameType(Enum):
+    DEFAULT = 1
 
 
 class Gender(Enum):
@@ -334,12 +399,36 @@ class Language(Enum):
     ALL                     = 'all'
 
 
+class ItemType(Enum):
+    LOCAL_VIDEO = 1
+    YOUTUBE = 2
+    LOCAL_AUDIO = 3
+
+
+class ItemStatus(Enum):
+    NOT_STARTED = 1
+    PLAYING = 2
+    PAUSE = 3
+
+
+class JoinType(Enum):
+    NULL = 0
+    OPEN = 1
+    APPROVAL_REQUIRED = 2
+    INVITE_ONLY = 3
+
+
 class MediaType(Enum):
     TEXT = 0
     IMAGE = 100
     YOUTUBE = 103
     AUDIO = 110
     STICKER = 113
+
+
+class MembershipStatus(Enum):
+    NONE = 0
+    AMINO_PLUS = 1
 
 
 class MessageType(Enum):
@@ -353,11 +442,11 @@ class MessageType(Enum):
     VOICE_CHAT_START            = 107
     VOICE_CHAT_END              = 110
 
-    LIVE_STREAM_NOT_ANSWERED    = 55
-    LIVE_STREAM_CANCELLED       = 56
-    LIVE_STREAM_DECLINED        = 57
-    LIVE_STREAM_START           = 108
-    LIVE_STREAM_END             = 111
+    VIDEO_CHAT_NOT_ANSWERED    = 55
+    VIDEO_CHAT_CANCELLED       = 56
+    VIDEO_CHAT_DECLINED        = 57
+    VIDEO_CHAT_START           = 108
+    VIDEO_CHAT_END             = 111
 
     AVATAR_CHAT_NOT_ANSWERED    = 58
     AVATAR_CHAT_CANCELLED       = 59
@@ -419,6 +508,57 @@ class NoticeStatus(Enum):
 class NoticeType(Enum):
     USERS = 'usersV2'
 
+# TYPE_BLOG_CATEGORY = 4
+# TYPE_BLOG_CATEGORY_ITEM_TAG = 5
+# TYPE_ITEM_CATEGORY = 13
+# TYPE_ITEM_CATEGORY_ITEM_TAG = 14
+
+class Type(Enum):
+    USER = 0
+    BLOG = 1
+    WIKI = 2
+    COMMENT = 3
+    BLOG_CATEGORY = 4
+    BLOG_CATEGORY_ITEM_TAG = 5
+    FEATURED_WIKI = 6 # featured-item
+    MESSAGE = 7
+
+    ADS = 11
+    CHAT = 12
+    WIKI_CATEGORY = 13
+    WIKI_CATEGORY_ITEM_TAG = 14
+    WIKI_SUBMISSION =  15
+    COMMUNITY = 16
+    COMMUNITY_COLLECTION = 17
+    COMMUNITY_INVITATION = 18
+    COMMUNITY_JOIN_REQUEST = 19
+    BOOKMARK = 20
+    COMMUNITY_REVIEW_REQUEST = 21
+
+    QUIZ_QUESTION = 23
+
+    EXTERNAL_ORIGINAL_POST = 29
+
+    SHARED_FOLDER = 106
+    SHARED_FILE = 109
+
+    STICKER = 113
+    STICKER_COLLECTION = 114
+
+    CHAT_BUBBLE = 116
+
+    AVATAR_FRAME = 122
+
+    INTEREST_DATA = 126
+
+    TOPIC = 128 # STORY_TOPIC
+
+    ANNOUNCEMENT = 131
+    CAPTION_FONT = 133
+    CAPTION_ANIMATION = 134
+
+    SEARCH_KEY_PREDICTION = 901
+
 
 class ObjectType(Enum):
     USER                = 0
@@ -432,9 +572,20 @@ class ObjectType(Enum):
 
     REPUTATION_LOG      = 10
     POLL_OPTION         = 11
+    # ADS                 = 11
     CHAT                = 12
+    #WIKI_CATEGOTY       = 13
+    WIKI_SUBMISSION = 15
+
 
     COMMUNITY           = 16
+    COMMUNITY_COLLECTION = 17
+    COMMUNITY_INVITATION = 18
+    COMMUNITY_JOIN_REQUEST = 19
+    # BOOKMARK            = 20
+    COMMUNITY_REVIEW_REQUEST = 21
+    QUIZ_QUESTION = 23
+    EXTERNAL_ORIGINAL_POST = 29
 
     IMAGE               = 100
     MUSIC               = 101
@@ -443,7 +594,7 @@ class ObjectType(Enum):
 
     SHARED_FOLDER       = 106
 
-    SHARED_FOLDER_FILE  = 109
+    SHARED_FILE  = 109
     VOICE               = 110
     MODERATION_TASK     = 111
     SCREENSHOT          = 112
@@ -458,15 +609,35 @@ class ObjectType(Enum):
     VV_CHAT             = 120
     P2A                 = 121
     SUBSCRIPTION        = 122
+    # AVATAR_FRAME      = 122
     AMINO_VIDEO         = 123
+
+    # ANNOUNCEMENT        = 131
+
+
+class PaidOutType(Enum):
+    BANK = 1
+    PAYPAL = 2
+
+
+class PayloadType(Enum):
+    ACTION_START = 306
+    ACTION_END = 303
 
 
 class PaymentType(Enum):
     COIN = 1
     IOS_PURCHASE = 2
-    IOS_SUBSCRIPTION = 3
+    IOS_SUBSCRIPTION = 3 # AppStore IAP
     ANDROID_PURCHASE = 4
-    ANDROID_SUBSCRIPTION = 5
+    ANDROID_SUBSCRIPTION = 5 # GooglePlay IAP
+
+
+class ProductOwnershipStatus(Enum):
+    NONE = 0
+    OWNED = 1
+    PARTIALLY_OWNED = 2
+    EXPIRED = 3
 
 
 class Role(Enum):
@@ -474,6 +645,10 @@ class Role(Enum):
     LEADER = 100
     CURATOR = 101
     AGENT = 102
+
+
+class SearchType(Enum):
+    NAME = 'name'
 
 
 class SourceType(Enum):
@@ -484,6 +659,14 @@ class SourceType(Enum):
     PROPS = 13
     FAN_CLUB_SUBSCRIPTION = 15
     FAN_CLUB = 16
+
+
+class Status(Enum):
+    OK = 0
+    CLOSED = 3
+    PENDING = 5
+    DISABLED = 9
+    DELETED = 10
 
 
 class UserType(Enum):
