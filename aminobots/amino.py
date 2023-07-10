@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 from datetime import datetime
 import logging
 from pydantic import HttpUrl
@@ -39,7 +39,6 @@ from .rtc import RTCClient
 from .ws import WSClient
 from .utils import (
     Device,
-    MediaList,
     SID,
     copy_all_docs,
     device_gen,
@@ -47,6 +46,8 @@ from .utils import (
 )
 from .objects import (
     Account,
+    Link,
+    Media,
     UserProfile
 )
 from .models import (
@@ -336,7 +337,7 @@ class Amino(ABCAmino):
             self.auid = response.auid
             self.secret = response.secret
             self.sid = response.sid
-            await self.update()
+            await self.update(response.user, response.account)
         return response
 
     @typechecker
@@ -445,7 +446,7 @@ class Amino(ABCAmino):
     async def delete_account(self, password: Optional[str] = None, secret: Optional[str] = None):
         return await self.http.post('account/delete-request', dict(secret=f'0 {password}' if password else secret))
 
-    async def edit_profile(self, nickname: Optional[str] = None, bio: Optional[str] = None, medias: Optional[MediaList] = None):
+    async def edit_profile(self, nickname: Optional[str] = None, bio: Optional[str] = None, medias: List[Media] = []):
         ...
 
     async def get_bussiness_wallet_history(self):

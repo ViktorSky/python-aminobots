@@ -23,7 +23,6 @@ SOFTWARE.
 import typing_extensions
 import collections.abc
 import urllib.parse
-import dataclasses
 import functools
 import warnings
 import datetime
@@ -37,9 +36,6 @@ import time
 import re
 import os
 
-from . import enums
-
-
 __all__ = (
     'active_time',
     'build_url',
@@ -48,10 +44,7 @@ __all__ = (
     'Device',
     'device_gen',
     'find_urls',
-    'Link',
     'match_arguments',
-    'Media',
-    'MediaList',
     'MISSING',
     'parse_annotations',
     'parse_time',
@@ -145,38 +138,24 @@ class suppress:
 
 
 class SID(str):
-    """Represents the session ID of the user.
+    """Represent the user session ID.
+
+    If encoding or errors is specified, then the object must expose a data buffer that will be decoded
+    using the given encoding and error handler. Otherwise, returns the result of object.__str__() (if defined)
+    or repr(object). encoding defaults to sys.getdefaultencoding(). errors defaults to 'strict'.
 
     Parameters
     ----------
-    sid : :class:`str`
-        The user sid string.
-
-    Attributes
-    ----------
-    version : int
-    key : str
-    ip_address
-    objectId
-    objectType
-    prefix: str
-    timestamp
-    clientType
+    sid : Any
+        The session ID object.
+    encoding : :class:`str` | `None`
+        Decode sid type after save.
+    errors : :class:`str` | `None`
+        Error handler
 
     """
 
-    json: dict
-    key: str
-    prefix: str
-    version: int
-    null: typing.Any
-    objectId: str
-    objectType = int
-    ip_address: str
-    timestamp: int
-    clientType: int
-
-    def __new__(cls, sid: str, /):
+    def __init__(self, sid: typing.Any, encoding: typing.Optional[str] = None, errors: typing.Optional[str] = None) -> None:
         try:
             decoded: bytes = base64.urlsafe_b64decode(
                 sid + "=" * (4 - len(sid) % 4)
@@ -184,8 +163,6 @@ class SID(str):
             data: dict = ujson.loads(decoded[1:-20].decode("utf-8"))
         except (TypeError, UnicodeDecodeError, ujson.JSONDecodeError) as exc:
             raise ValueError('invalid sid.') from exc
-        else:
-            self = str.__new__(cls, sid)
         self.json = data
         self.key = decoded[-20:].hex()
         self.prefix = decoded[:2].hex()
@@ -196,7 +173,6 @@ class SID(str):
         self.ip_address = self.json['4']
         self.timestamp = self.json['5']
         self.clientType = self.json['6']
-        return self
 
 
 class Device(str):
@@ -308,6 +284,31 @@ def match_arguments(func, *args, **kwargs) -> typing.OrderedDict[str, typing.Any
 
 
 def typechecker(func):
+    """Decorator for type checking.
+
+    It is used to check the type of arguments passed to the callable, when it is called.
+
+    Parameters
+    ----------
+    func : `Callable`
+        The callable that will be checked when called.
+
+    Returns
+    -------
+    Callable
+        The function decorated.
+
+    """
+    @functools.wraps(func)
+    async def async_inner(*args, **kwargs):
+        annotations = parse_annotations(func)
+        arguments = match_arguments(func, *args, **kwargs)
+        for name, value in arguments.items():
+            if annotations[name] is MISSING:
+                continue
+            if not isinstance(value, annotations[name]):
+                raise TypeError('%r argument must be %r type not %r.' % (name, annotations[name].__qualname__, type(value).__name__))
+        return await func(*args, **kwargs)
     @functools.wraps(func)
     def inner(*args, **kwargs):
         annotations = parse_annotations(func)
@@ -318,8 +319,12 @@ def typechecker(func):
             if not isinstance(value, annotations[name]):
                 raise TypeError('%r argument must be %r type not %r.' % (name, annotations[name].__qualname__, type(value).__name__))
         return func(*args, **kwargs)
+    if inspect.iscoroutinefunction(func):
+        async_inner.__doc__ = func.__doc__
+        async_inner.__signature__ = inspect.signature(func) # type: ignore    
+        return async_inner
     inner.__doc__ = func.__doc__
-    inner.__signature__ = inspect.signature(func)
+    inner.__signature__ = inspect.signature(func) # type: ignore
     return inner
 
 
@@ -356,7 +361,7 @@ def copy_doc(original):
 
     """
     def decorator(overridden):
-        overridden.__doc__: str = original.__doc__
+        overridden.__doc__ = original.__doc__
         overridden.__signature__ = inspect.signature(overridden)  # type ignore
         return overridden
     return decorator
@@ -409,122 +414,3 @@ def active_time(seconds=0, minutes=0, hours=0) -> typing.List[typing.Dict[str, i
             'end': int(time.time() + total % 300)
         }
     ]
-
-
-@dataclasses.dataclass(unsafe_hash=True, frozen=True, slots=True)
-class Link:
-    """Represents a link for the content of posts, chat messages, etc.
-
-    Examples
-    --------
-    ```
-    >>> content = "Hello!, see your {}.".format(Link('ndc://user-me', 'profile'))
-    >>> content
-    'Hello!, see your [ndc://user-me|profile].'
-    >>> blog = await amino.post_blog(communityId, input('Blog Title:'), content)
-    ```
-
-    Parameters
-    ----------
-    url : :class:`str`
-        The link. (amino, ndc, external)
-    alias : :class:`str` | `None`
-        The alias link.
-
-    """
-    url: str = dataclasses.field(hash=True)
-    alias: typing.Optional[str] = dataclasses.field(default=None, hash=True)
-
-    def __str__(self) -> str:
-        return f'[{self.url}|{self.alias}]' if self.alias else self.url
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.url, str):
-            raise TypeError('url argument must be a string, not %r.' % type(self.url).__name__)
-        elif not isinstance(self.alias, typing.Optional[str]):
-            raise TypeError('alias argument must be a string, not %r.' % type(self.alias).__name__)
-
-
-@dataclasses.dataclass(unsafe_hash=True, frozen=True, slots=True)
-class Media:
-    """Represents a media upload for user bio, content of posts, etc.
-
-    Examples
-    --------
-    ```
-    >>> my_frame: Media = Media(MediaType.IMAGE, icon)
-    >>> medias: MediaList = amino.user.medias
-    >>> await amino.edit_profile(medias=MediaList(*medias, my_frame))
-    ```
-
-    """
-    type: enums.MediaType = dataclasses.field(hash=False)
-    url: str = dataclasses.field(hash=True)
-    caption: typing.Optional[str] = dataclasses.field(default=None, hash=True)
-    id: typing.Optional[str] = dataclasses.field(default=None, hash=True)
-
-    def __str__(self) -> str:
-        return f"[IMG={self.id}]" if self.id else self.url
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.url, str):
-            raise TypeError('url argument must be a string, not %r.' % type(self.url).__name__)
-        elif not isinstance(self.caption, typing.Optional[str]):
-            raise TypeError('caption argument must be a string, not %r.' % type(self.alias).__name__)
-        elif not isinstance(self.type, enums.MediaType):
-            raise TypeError('type argument must be a MediaType object not %r.' % type(self.type).__name__)
-        elif self.type not in (enums.MediaType.IMAGE, enums.MediaType.YOUTUBE):
-            raise ValueError('type argument must be IMAGE or YOUTUBE, not %r.' % self.type.name)
-        elif not isinstance(self.id, typing.Optional[str]):
-            raise TypeError('id argument must be a string not %r.' % type(self.id).__name__)
-        elif isinstance(self.id, str):
-            if len(self.id) != 3:
-                raise ValueError('id argument must contain 3 characters, not %d.' % len(self.id))
-            elif any(filter(lambda c: not (c.isalpha() and c.isupper()), self.id)):
-                raise ValueError('id argument must have only uppercase ascii alphabetic characters.')
-
-    @property
-    def json(self) -> typing.Tuple[int, str, typing.Optional[str], typing.Optional[str]]:
-        return [
-            self.type.value,
-            self.url,
-            self.caption,
-            self.id
-        ]
-
-
-@dataclasses.dataclass(init=False, unsafe_hash=True)
-class MediaList:
-    args: typing.Tuple[Media, ...] = dataclasses.field(hash=True)
-
-    def __init__(self, *args: Media) -> None:
-        unmatch = tuple(filter(lambda m: not isinstance(m, Media), args))
-        if unmatch:
-            raise ValueError('expected Media object, not %r.' % type(unmatch[0]).__name__)
-        self.args = args
-
-    def __iter__(self) -> typing.Iterator[Media]:
-        return iter(self.args)
-
-    def __len__(self) -> int:
-        return len(self.args)
-
-    @property
-    def json(self) -> typing.List[typing.Tuple[int, str, typing.Optional[str], typing.Optional[str]]]:
-        return [m.json for m in self.args]
-
-    @property
-    def types(self) -> typing.List[enums.MediaType]:
-        return [m.type for m in self.args]
-
-    @property
-    def urls(self) -> typing.List[str]:
-        return [m.url for m in self.args]
-
-    @property
-    def captions(self) -> typing.List[str]:
-        return [m.caption for m in self.args]
-
-    @property
-    def ids(self) -> typing.List[str]:
-        return [m.id for m in self.args]

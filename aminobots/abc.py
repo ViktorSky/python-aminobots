@@ -75,7 +75,7 @@ class ABCAmino(metaclass=ABCMeta):
 
     @language.setter
     def language(self, value: Language) -> None:
-        if not isinstance(self, Language):
+        if value not in Language:
             raise TypeError('language must be a Language object not %r.' % type(value).__name__)
         elif value is Language.ALL:
             raise ValueError('can\'t set all languages, select one only.')
