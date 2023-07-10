@@ -1,4 +1,4 @@
-python-dateutil
+pydantic
 aiohttp
 json_minify
-python-dotenv
+ujson
