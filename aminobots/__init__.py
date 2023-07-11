@@ -2,7 +2,7 @@
 Amino API Wrapper
 -----------------
 
-A basic async wrapper for the Amino API.
+A async wrapper for the Amino API.
 
 :copyright: (c) 2023-present ViktorSky
 :license: MIT, see LICENSE for more details.
