@@ -1,5 +1,5 @@
 ## python-aminobots
-Library for create bots in Amino
+Library for create bots in Amino (server closed)
 
 For more information join the discord server: https://discord.gg/mWJfZ2eTFc
 
